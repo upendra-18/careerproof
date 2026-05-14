@@ -1,7 +1,25 @@
-const puppeteer = require('puppeteer');
 const fs         = require('fs');
 const path       = require('path');
 const QRCode     = require('qrcode');
+
+async function launchBrowser() {
+  if (process.env.VERCEL) {
+    const chromium = require('@sparticuz/chromium');
+    const puppeteer = require('puppeteer-core');
+    return puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+  }
+
+  const puppeteer = require('puppeteer');
+  return puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+}
 
 /**
  * Renders an HTML template string with {{variable}} placeholders.
@@ -73,18 +91,14 @@ async function generateOfferLetterPDF(applicantData) {
   });
 
   // Ensure output directory exists
-  const outDir = path.join(__dirname, 'generated_pdfs');
+  const outDir = process.env.VERCEL ? path.join('/tmp', 'generated_pdfs') : path.join(__dirname, 'generated_pdfs');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
   const safeName  = fullName.replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_');
   const fileName  = `CareerProof_OfferLetter_${safeName}_${candidateId.replace(/\//g,'-')}.pdf`;
   const pdfPath   = path.join(outDir, fileName);
 
-  // Launch headless Chromium and print to PDF
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-  });
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage();
@@ -134,17 +148,14 @@ async function generateCertificatePDF(applicantData) {
       : issueDate.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' }),
   });
 
-  const outDir = path.join(__dirname, 'generated_pdfs');
+  const outDir = process.env.VERCEL ? path.join('/tmp', 'generated_pdfs') : path.join(__dirname, 'generated_pdfs');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
   const safeName = fullName.replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_');
   const fileName = `CareerProof_Certificate_${safeName}_${candidateId.replace(/\//g,'-')}.pdf`;
   const pdfPath = path.join(outDir, fileName);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-  });
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage();

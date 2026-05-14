@@ -15,11 +15,14 @@ const { sendOfferEmail, sendCertificateEmail } = require('./emailService');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const APPLICATION_FEE_INR = 199;
+const isVercel = !!process.env.VERCEL;
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
+if (!isVercel) {
+  app.use(express.static(__dirname));
+}
 
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
@@ -28,13 +31,34 @@ const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
     })
   : null;
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => {
+let mongoConnectionPromise = null;
+
+async function connectDatabase() {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI is not configured.');
+  }
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (!mongoConnectionPromise) {
+    mongoConnectionPromise = mongoose.connect(process.env.MONGODB_URI).then(connection => {
+      console.log('MongoDB connected');
+      return connection;
+    }).catch(err => {
+      mongoConnectionPromise = null;
+      throw err;
+    });
+  }
+  return mongoConnectionPromise;
+}
+
+app.use('/api', async (_, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (err) {
     console.error('MongoDB failed:', err.message);
-    process.exit(1);
-  });
+    res.status(500).json({ success: false, message: 'Database connection failed.' });
+  }
+});
 
 const DOMAIN_LABELS = {
   fullstack: 'Full Stack Web Development',
@@ -430,16 +454,25 @@ app.get('/api/applications/:candidateId', async (req, res) => {
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }));
 
-app.listen(PORT, () => {
-  console.log(`\nCareerProof API  ->  http://localhost:${PORT}`);
-  console.log(`MongoDB          ->  ${(process.env.MONGODB_URI || '').slice(0, 42)}...`);
-  console.log(`Email provider   ->  ${process.env.EMAIL_PROVIDER || 'gmail'}`);
-  console.log(`Razorpay         ->  ${razorpay ? 'configured' : 'missing keys'}\n`);
-});
+if (require.main === module) {
+  connectDatabase()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`\nCareerProof API  ->  http://localhost:${PORT}`);
+        console.log(`MongoDB          ->  ${(process.env.MONGODB_URI || '').slice(0, 42)}...`);
+        console.log(`Email provider   ->  ${process.env.EMAIL_PROVIDER || 'gmail'}`);
+        console.log(`Razorpay         ->  ${razorpay ? 'configured' : 'missing keys'}\n`);
+      });
 
-mongoose.connection.once('open', () => {
-  sendDueCertificates().catch(err => console.error('Certificate startup job failed:', err.message));
-  setInterval(() => {
-    sendDueCertificates().catch(err => console.error('Certificate scheduled job failed:', err.message));
-  }, 24 * 60 * 60 * 1000);
-});
+      sendDueCertificates().catch(err => console.error('Certificate startup job failed:', err.message));
+      setInterval(() => {
+        sendDueCertificates().catch(err => console.error('Certificate scheduled job failed:', err.message));
+      }, 24 * 60 * 60 * 1000);
+    })
+    .catch(err => {
+      console.error('MongoDB failed:', err.message);
+      process.exit(1);
+    });
+}
+
+module.exports = app;

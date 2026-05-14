@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/",
+      "destination": "/careerproof.html"
+    },
+    {
+      "source": "/careerride.html",
+      "destination": "/careerproof.html"
+    }
+  ]
+}
