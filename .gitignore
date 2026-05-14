@@ -7,7 +7,6 @@ node_modules/
 !.env.example
 
 # Generated/runtime files
-public/
 generated_pdfs/
 *.log
 npm-debug.log*
