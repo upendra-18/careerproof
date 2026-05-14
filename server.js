@@ -20,9 +20,7 @@ const isVercel = !!process.env.VERCEL;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-if (!isVercel) {
-  app.use(express.static(__dirname));
-}
+app.use(express.static(__dirname));
 
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
