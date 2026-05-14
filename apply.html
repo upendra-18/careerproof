@@ -1067,6 +1067,22 @@
     document.getElementById('successOverlay').classList.add('show');
   }
 
+  async function readApiJson(response, fallbackMessage) {
+    const contentType = response.headers.get('content-type') || '';
+    const bodyText = await response.text();
+
+    if (!contentType.includes('application/json')) {
+      const shortBody = bodyText.replace(/\s+/g, ' ').trim().slice(0, 140);
+      throw new Error(`${fallbackMessage || 'Server returned an invalid response.'} HTTP ${response.status}. ${shortBody}`);
+    }
+
+    try {
+      return JSON.parse(bodyText);
+    } catch (_) {
+      throw new Error(`${fallbackMessage || 'Server returned invalid JSON.'} HTTP ${response.status}.`);
+    }
+  }
+
   let pendingPayment = null;
 
   const upiApps = {
@@ -1160,7 +1176,7 @@
                 razorpay_signature: response.razorpay_signature,
               }),
             });
-            const verifyData = await verifyRes.json();
+            const verifyData = await readApiJson(verifyRes, 'Payment verification failed.');
             if (!verifyRes.ok || !verifyData.success) throw new Error(verifyData.message || 'Payment verification failed.');
             resolve(verifyData);
           } catch (err) {
@@ -1253,7 +1269,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const orderData = await orderRes.json();
+      const orderData = await readApiJson(orderRes, 'Could not start payment.');
       if (!orderRes.ok || !orderData.success) throw new Error(orderData.message || 'Could not start payment.');
 
       setSubmitLoading(false);

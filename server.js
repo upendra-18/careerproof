@@ -37,7 +37,9 @@ async function connectDatabase() {
   }
   if (mongoose.connection.readyState === 1) return mongoose.connection;
   if (!mongoConnectionPromise) {
-    mongoConnectionPromise = mongoose.connect(process.env.MONGODB_URI).then(connection => {
+    mongoConnectionPromise = mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000,
+    }).then(connection => {
       console.log('MongoDB connected');
       return connection;
     }).catch(err => {
@@ -102,41 +104,54 @@ function validateApplicationPayload(body) {
   };
 }
 
-async function processOfferInBackground(applicant) {
-  setImmediate(async () => {
-    try {
-      const pdfPath = await generateOfferLetterPDF({
-        fullName: applicant.fullName,
-        domain: applicant.domain,
-        candidateId: applicant.candidateId,
-        startDate: applicant.startDate,
-        endDate: applicant.endDate,
-        duration: applicant.duration,
-      });
+async function processOffer(applicant) {
+  try {
+    const pdfPath = await generateOfferLetterPDF({
+      fullName: applicant.fullName,
+      domain: applicant.domain,
+      candidateId: applicant.candidateId,
+      startDate: applicant.startDate,
+      endDate: applicant.endDate,
+      duration: applicant.duration,
+    });
 
-      await sendOfferEmail({
-        fullName: applicant.fullName,
-        email: applicant.email,
-        domain: applicant.domain,
-        candidateId: applicant.candidateId,
-        startDate: applicant.startDate,
-        endDate: applicant.endDate,
-        duration: applicant.duration,
-      }, pdfPath);
+    await sendOfferEmail({
+      fullName: applicant.fullName,
+      email: applicant.email,
+      domain: applicant.domain,
+      candidateId: applicant.candidateId,
+      startDate: applicant.startDate,
+      endDate: applicant.endDate,
+      duration: applicant.duration,
+    }, pdfPath);
 
-      await Applicant.findByIdAndUpdate(applicant._id, { emailSent: true, pdfPath, status: 'contacted' });
-      console.log(`Offer complete for ${applicant.candidateId}`);
+    await Applicant.findByIdAndUpdate(applicant._id, { emailSent: true, pdfPath, status: 'contacted' });
+    console.log(`Offer complete for ${applicant.candidateId}`);
 
+    if (process.env.VERCEL) {
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    } else {
       setTimeout(() => {
         if (fs.existsSync(pdfPath)) {
           fs.unlinkSync(pdfPath);
           console.log(`PDF cleaned: ${path.basename(pdfPath)}`);
         }
       }, 3600000);
-    } catch (bgErr) {
-      console.error(`Background job failed for ${applicant.candidateId}:`, bgErr.message);
-      await Applicant.findByIdAndUpdate(applicant._id, { emailError: bgErr.message }).catch(() => {});
     }
+  } catch (bgErr) {
+    console.error(`Background job failed for ${applicant.candidateId}:`, bgErr.message);
+    await Applicant.findByIdAndUpdate(applicant._id, { emailError: bgErr.message }).catch(() => {});
+  }
+}
+
+async function processOfferInBackground(applicant) {
+  if (process.env.VERCEL) {
+    await processOffer(applicant);
+    return;
+  }
+
+  setImmediate(() => {
+    processOffer(applicant).catch(() => {});
   });
 }
 
