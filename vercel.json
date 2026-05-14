@@ -1,7 +1,23 @@
 {
+  "buildCommand": "node scripts/prepare-vercel.js",
+  "outputDirectory": "public",
   "functions": {
     "api/[...path].js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": [
+        "assets/**",
+        "*.html"
+      ]
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/careerproof.html"
+    },
+    {
+      "source": "/careerride.html",
+      "destination": "/careerproof.html"
+    }
+  ]
 }
