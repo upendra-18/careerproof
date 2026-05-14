@@ -98,28 +98,28 @@ async function generateOfferLetterPDF(applicantData) {
   const pdfPath = path.join(outDir, fileName);
   const qrBuffer = await createQrBuffer(candidateId);
 
-  const doc = new PDFDocument({ size: 'A4', margin: 54 });
+  const doc = new PDFDocument({ size: 'A4', margin: 0 });
   const pageWidth = doc.page.width;
   const contentX = 54;
   const contentWidth = pageWidth - 108;
 
-  doc.rect(0, 0, pageWidth, 78).fill('#f7fffb');
+  doc.rect(0, 0, pageWidth, 68).fill('#f7fffb');
   doc.fillColor('#151515');
-  addBrand(doc, contentX, 34);
-  doc.image(qrBuffer, pageWidth - 126, 34, { width: 66 });
-  doc.font('Helvetica-Bold').fontSize(6.5).fillColor('#333333').text('VERIFY STUDENT ID', pageWidth - 138, 102, { width: 90, align: 'center' });
+  addBrand(doc, contentX, 25);
+  doc.image(qrBuffer, pageWidth - 126, 28, { width: 60 });
+  doc.font('Helvetica-Bold').fontSize(6).fillColor('#333333').text('VERIFY STUDENT ID', pageWidth - 138, 90, { width: 90, align: 'center' });
 
-  doc.font('Helvetica-Bold').fontSize(26).fillColor('#111111').text('INTERNSHIP OFFER LETTER', contentX, 112, { width: contentWidth, align: 'center' });
-  doc.moveTo(76, 151).lineTo(pageWidth - 76, 151).lineWidth(1.4).strokeColor('#222222').stroke();
-  doc.font('Helvetica-Bold').fontSize(9.5).fillColor('#111111')
-    .text(formatDate(new Date()), contentX, 176)
-    .text(`STUDENT ID: ${candidateId}`, 320, 176, { width: 220, align: 'right' });
-  doc.font('Helvetica-Bold').fontSize(10.5).text(`Name: ${fullName}`, contentX, 207);
+  doc.font('Helvetica-Bold').fontSize(24).fillColor('#111111').text('INTERNSHIP OFFER LETTER', contentX, 95, { width: contentWidth, align: 'center' });
+  doc.moveTo(78, 133).lineTo(pageWidth - 78, 133).lineWidth(1.2).strokeColor('#222222').stroke();
+  doc.font('Helvetica-Bold').fontSize(8.8).fillColor('#111111')
+    .text(formatDate(new Date()), contentX, 154)
+    .text(`STUDENT ID: ${candidateId}`, 320, 154, { width: 220, align: 'right' });
+  doc.font('Helvetica-Bold').fontSize(9.5).text(`Name: ${fullName}`, contentX, 182);
 
-  doc.font('Helvetica').fontSize(9.6).fillColor('#222222');
-  textBlock(doc, `Dear ${fullName},`, contentX, 236, contentWidth, { align: 'left', lineGap: 1 });
-  textBlock(doc, `We are pleased to offer you the ${domain} Intern position at CareerProof. Your application has been reviewed and accepted by our recruitment team under the terms mentioned in this document.`, contentX, 262, contentWidth, { lineGap: 1 });
-  textBlock(doc, `As a ${domain} Intern, you will participate in practical learning tasks, real-world project work, documentation, and portfolio-building activities. You are expected to communicate professionally, submit tasks on time, and maintain consistent conduct throughout the internship.`, contentX, 313, contentWidth, { lineGap: 1 });
+  doc.font('Helvetica').fontSize(8.9).fillColor('#222222');
+  textBlock(doc, `Dear ${fullName},`, contentX, 208, contentWidth, { align: 'left', lineGap: 0 });
+  textBlock(doc, `We are pleased to offer you the ${domain} Intern position at CareerProof. Your application has been reviewed and accepted by our recruitment team under the terms mentioned in this document.`, contentX, 232, contentWidth, { lineGap: 0 });
+  textBlock(doc, `As a ${domain} Intern, you will participate in practical learning tasks, real-world project work, documentation, and portfolio-building activities. You are expected to communicate professionally, submit tasks on time, and maintain consistent conduct throughout the internship.`, contentX, 278, contentWidth, { lineGap: 0 });
 
   const rows = [
     ['Domain / Role', `${domain} Intern`],
@@ -128,34 +128,34 @@ async function generateOfferLetterPDF(applicantData) {
     ['Duration', duration],
     ['Mode', 'Remote / Online'],
   ];
-  let rowY = 392;
+  let rowY = 350;
   for (const [label, value] of rows) {
-    doc.rect(contentX, rowY, 150, 24).fillAndStroke('#f7f7f7', '#dedede');
-    doc.rect(contentX + 150, rowY, contentWidth - 150, 24).fillAndStroke('#ffffff', '#dedede');
-    doc.font('Helvetica-Bold').fontSize(9.4).fillColor('#111111').text(label, contentX + 10, rowY + 7, { width: 130 });
-    doc.font('Helvetica').fontSize(9.4).text(value, contentX + 160, rowY + 7, { width: contentWidth - 170 });
-    rowY += 24;
+    doc.rect(contentX, rowY, 150, 21).fillAndStroke('#f7f7f7', '#dedede');
+    doc.rect(contentX + 150, rowY, contentWidth - 150, 21).fillAndStroke('#ffffff', '#dedede');
+    doc.font('Helvetica-Bold').fontSize(8.6).fillColor('#111111').text(label, contentX + 10, rowY + 6, { width: 130 });
+    doc.font('Helvetica').fontSize(8.6).text(value, contentX + 160, rowY + 6, { width: contentWidth - 170 });
+    rowY += 21;
   }
 
-  doc.font('Helvetica').fontSize(9.3).fillColor('#222222');
-  textBlock(doc, 'Performance will be evaluated on task completion, consistency, professionalism, communication, and adherence to project milestones. Mentors will provide guidance, but a proactive working approach is expected.', contentX, 526, contentWidth, { lineGap: 1 });
-  textBlock(doc, `This internship is valid from ${formatDate(startDate)} to ${formatDate(endDate, 'completion date')}. Failure to join, communicate, or begin assigned work may result in withdrawal of this offer.`, contentX, 580, contentWidth, { lineGap: 1 });
+  doc.font('Helvetica').fontSize(8.5).fillColor('#222222');
+  textBlock(doc, 'Performance will be evaluated on task completion, consistency, professionalism, communication, and adherence to project milestones. Mentors will provide guidance, but a proactive working approach is expected.', contentX, 472, contentWidth, { lineGap: 0 });
+  textBlock(doc, `This internship is valid from ${formatDate(startDate)} to ${formatDate(endDate, 'completion date')}. Failure to join, communicate, or begin assigned work may result in withdrawal of this offer.`, contentX, 520, contentWidth, { lineGap: 0 });
 
-  doc.rect(contentX, 632, contentWidth, 38).fill('#f5f7ff');
-  doc.rect(contentX, 632, 4, 38).fill('#141b3d');
-  doc.font('Helvetica-Bold').fontSize(9.4).fillColor('#111111').text('Important:', contentX + 14, 642, { continued: true });
-  doc.font('Helvetica').fontSize(9.4).text(' Timely task submission and professional conduct are mandatory to receive the internship completion certificate.', { width: contentWidth - 28 });
+  doc.rect(contentX, 566, contentWidth, 34).fill('#f5f7ff');
+  doc.rect(contentX, 566, 4, 34).fill('#141b3d');
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#111111').text('Important:', contentX + 14, 576, { continued: true });
+  doc.font('Helvetica').fontSize(8.5).text(' Timely task submission and professional conduct are mandatory to receive the internship completion certificate.', { width: contentWidth - 28 });
 
-  doc.font('Helvetica-Bold').fontSize(9.4).fillColor('#333333').text('We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.', contentX, 688, { width: contentWidth });
+  doc.font('Helvetica-Bold').fontSize(8.6).fillColor('#333333').text('We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.', contentX, 616, { width: contentWidth });
 
-  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 58, 723, 210);
-  addIsoMark(doc, 292, 708, 78);
-  addSignature(doc, 'Syeda Quadri', 'Program Director', 335, 723, 210);
+  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 58, 650, 210);
+  addIsoMark(doc, 292, 640, 72);
+  addSignature(doc, 'Syeda Quadri', 'Program Director', 335, 650, 210);
 
   doc.font('Helvetica').fontSize(9).fillColor('#555555')
-    .text('CareerProof Internship Program', contentX, 820)
-    .text(process.env.SUPPORT_EMAIL || 'careerproof.services@gmail.com', 225, 820, { width: 180, align: 'center' })
-    .text('India', 470, 820, { width: 70, align: 'right' });
+    .text('CareerProof Internship Program', contentX, 748)
+    .text(process.env.SUPPORT_EMAIL || 'careerproof.services@gmail.com', 225, 748, { width: 180, align: 'center' })
+    .text('India', 470, 748, { width: 70, align: 'right' });
 
   await writePdf(doc, pdfPath);
   console.log(`PDF generated: ${fileName}`);
@@ -171,7 +171,7 @@ async function generateCertificatePDF(applicantData) {
   const qrBuffer = await createQrBuffer(candidateId);
   const logoPath = path.join(__dirname, 'assets', 'logo-removebg-preview.png');
 
-  const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 44 });
+  const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 0 });
   doc.rect(0, 0, doc.page.width, doc.page.height).fill('#ffffff');
   doc.rect(0, 0, 34, doc.page.height).fill('#fff2f8');
   doc.rect(doc.page.width - 34, 0, 34, doc.page.height).fill('#fff2f8');
