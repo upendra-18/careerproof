@@ -46,6 +46,12 @@ function addBrand(doc, x = 54, y = 42) {
 }
 
 function addIsoMark(doc, x, y, size) {
+  const isoPath = path.join(__dirname, 'assets', 'iso-9001.png');
+  if (fs.existsSync(isoPath)) {
+    doc.image(isoPath, x, y, { width: size });
+    return;
+  }
+
   doc.save();
   doc.circle(x + size / 2, y + size / 2, size / 2).lineWidth(2).strokeColor('#005eb8').stroke();
   doc.circle(x + size / 2, y + size / 2, size * 0.31).lineWidth(1).strokeColor('#005eb8').stroke();
@@ -65,11 +71,16 @@ function addAicteMark(doc, x, y, size) {
   doc.restore();
 }
 
-function addSignature(doc, name, role, x, y, width) {
-  doc.font('Times-Italic').fontSize(30).fillColor('#080808').text(name, x, y, { width, align: 'center' });
-  doc.moveTo(x, y + 38).lineTo(x + width, y + 38).lineWidth(1).strokeColor('#111111').stroke();
-  doc.font('Helvetica-Bold').fontSize(12).fillColor('#111111').text(name, x, y + 44, { width, align: 'center' });
-  doc.font('Helvetica').fontSize(10).fillColor('#666666').text(role, x, y + 60, { width, align: 'center' });
+function addSignature(doc, name, role, x, y, width, imageName) {
+  const signaturePath = imageName ? path.join(__dirname, 'assets', imageName) : null;
+  if (signaturePath && fs.existsSync(signaturePath)) {
+    doc.image(signaturePath, x + 8, y, { width: width - 16 });
+  } else {
+    doc.font('Times-Italic').fontSize(26).fillColor('#080808').text(name, x, y, { width, align: 'center' });
+  }
+  doc.moveTo(x, y + 48).lineTo(x + width, y + 48).lineWidth(1).strokeColor('#111111').stroke();
+  doc.font('Helvetica-Bold').fontSize(11).fillColor('#111111').text(name, x, y + 55, { width, align: 'center' });
+  doc.font('Helvetica').fontSize(9.5).fillColor('#666666').text(role, x, y + 70, { width, align: 'center' });
 }
 
 function textBlock(doc, text, x, y, width, options = {}) {
@@ -146,16 +157,16 @@ async function generateOfferLetterPDF(applicantData) {
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#111111').text('Important:', contentX + 14, 576, { continued: true });
   doc.font('Helvetica').fontSize(8.5).text(' Timely task submission and professional conduct are mandatory to receive the internship completion certificate.', { width: contentWidth - 28 });
 
-  doc.font('Helvetica-Bold').fontSize(8.6).fillColor('#333333').text('We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.', contentX, 616, { width: contentWidth });
+  doc.font('Helvetica-Bold').fontSize(8.6).fillColor('#333333').text('We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.', contentX, 612, { width: contentWidth });
 
-  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 58, 650, 210);
-  addIsoMark(doc, 292, 640, 72);
-  addSignature(doc, 'Syeda Quadri', 'Program Director', 335, 650, 210);
+  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 64, 648, 190, 'signature-aniket.png');
+  addIsoMark(doc, 272, 656, 58);
+  addSignature(doc, 'Syeda Quadri', 'Program Director', 344, 648, 190, 'signature-syeda.png');
 
   doc.font('Helvetica').fontSize(9).fillColor('#555555')
-    .text('CareerProof Internship Program', contentX, 748)
-    .text(process.env.SUPPORT_EMAIL || 'careerproof.services@gmail.com', 225, 748, { width: 180, align: 'center' })
-    .text('India', 470, 748, { width: 70, align: 'right' });
+    .text('CareerProof Internship Program', contentX, 762)
+    .text(process.env.SUPPORT_EMAIL || 'careerproof.services@gmail.com', 225, 762, { width: 180, align: 'center' })
+    .text('India', 470, 762, { width: 70, align: 'right' });
 
   await writePdf(doc, pdfPath);
   console.log(`PDF generated: ${fileName}`);
@@ -199,9 +210,9 @@ async function generateCertificatePDF(applicantData) {
   const statement = `Has worked as a ${domain} Intern with us from ${formatDate(startDate)} to ${formatDate(endDate)}, demonstrating sincerity, enthusiasm, discipline, and strong professional skills. We wish them the best in their future endeavors.`;
   doc.font('Times-Roman').fontSize(15).fillColor('#333333').text(statement, 108, 278, { width: doc.page.width - 216, align: 'center', lineGap: 4 });
 
-  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 70, 390, 240);
+  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 70, 390, 240, 'signature-aniket.png');
   addIsoMark(doc, doc.page.width / 2 - 50, 374, 100);
-  addSignature(doc, 'Syeda Quadri', 'CareerProof', doc.page.width - 310, 390, 240);
+  addSignature(doc, 'Syeda Quadri', 'CareerProof', doc.page.width - 310, 390, 240, 'signature-syeda.png');
 
   doc.font('Helvetica').fontSize(10).fillColor('#333333')
     .text(`Issue Date: ${new Date().toLocaleDateString('en-IN')}`, 54, 560)
