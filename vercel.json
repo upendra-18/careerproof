@@ -4,10 +4,7 @@
   "functions": {
     "api/[...path].js": {
       "maxDuration": 60,
-      "includeFiles": [
-        "assets/**",
-        "*.html"
-      ]
+      "includeFiles": "{assets/**,*.html}"
     }
   },
   "rewrites": [
