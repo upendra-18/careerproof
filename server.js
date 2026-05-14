@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const APPLICATION_FEE_INR = 199;
 const isVercel = !!process.env.VERCEL;
+const SEND_CERTIFICATE_IMMEDIATELY = process.env.SEND_CERTIFICATE_IMMEDIATELY === 'true';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -155,6 +156,16 @@ async function processOfferInBackground(applicant) {
   });
 }
 
+async function processCertificateImmediatelyForTesting(applicant) {
+  if (!SEND_CERTIFICATE_IMMEDIATELY) return;
+  try {
+    await sendCertificateForApplicant(applicant);
+  } catch (err) {
+    console.error(`Immediate test certificate failed for ${applicant.candidateId}:`, err.message);
+    await Applicant.findByIdAndUpdate(applicant._id, { certificateEmailError: err.message }).catch(() => {});
+  }
+}
+
 async function sendCertificateForApplicant(applicant) {
   const { pdfPath, certificateId } = await generateCertificatePDF({
     fullName: applicant.fullName,
@@ -224,6 +235,7 @@ async function savePaidApplication(application, payment) {
   await applicant.save();
   console.log(`Saved: ${applicant.candidateId} - ${applicant.fullName}`);
   await processOfferInBackground(applicant);
+  await processCertificateImmediatelyForTesting(applicant);
 
   return applicant;
 }
@@ -342,7 +354,7 @@ app.get('/api/verify/:candidateId', async (req, res) => {
     }
 
     const now = new Date();
-    const isCompleted = doc.endDate && doc.endDate <= now;
+    const isCompleted = SEND_CERTIFICATE_IMMEDIATELY || (doc.endDate && doc.endDate <= now);
     res.json({
       success: true,
       data: {
@@ -396,7 +408,7 @@ app.get('/api/verify/:candidateId/certificate', async (req, res) => {
     if (!doc || doc.paymentStatus !== 'paid') {
       return res.status(404).json({ success: false, message: 'No verified student record found for this ID.' });
     }
-    if (!doc.endDate || doc.endDate > new Date()) {
+    if (!SEND_CERTIFICATE_IMMEDIATELY && (!doc.endDate || doc.endDate > new Date())) {
       return res.status(403).json({ success: false, message: 'Certificate is available only after internship completion.' });
     }
 
