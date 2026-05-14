@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #f3f4f6;
+    color: #151515;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .page {
+    width: 794px;
+    height: 1123px;
+    margin: 0 auto;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    padding: 46px 64px 42px;
+  }
+  .corner {
+    position: absolute;
+    width: 210px;
+    height: 82px;
+    border-radius: 0 0 70px 0;
+    left: 0;
+    top: 0;
+    background: linear-gradient(135deg, #00e5a0 0%, #0099ff 58%, #d91e6d 100%);
+  }
+  .corner::after {
+    content: "";
+    position: absolute;
+    width: 136px;
+    height: 58px;
+    border-radius: 0 0 54px 0;
+    left: 72px;
+    top: 0;
+    background: #141b3d;
+  }
+  .corner-right {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    right: -68px;
+    top: -46px;
+    border-radius: 50%;
+    border: 24px solid #d91e6d;
+    border-left-color: #141b3d;
+  }
+  .qr {
+    position: absolute;
+    right: 56px;
+    top: 34px;
+    width: 92px;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    z-index: 3;
+  }
+  .qr img {
+    width: 82px;
+    height: 82px;
+    display: block;
+    margin: 0 auto 3px;
+    border: 1px solid #ddd;
+    padding: 4px;
+    background: #fff;
+  }
+  .qr div {
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: #333;
+  }
+  .brand {
+    text-align: center;
+    margin-top: 4px;
+    margin-bottom: 24px;
+  }
+  .brand-name {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #141b3d;
+  }
+  .brand-name span { color: #00a977; }
+  .tagline {
+    font-size: 9px;
+    font-weight: 700;
+    color: #6b7280;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .title {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin: 6px 0 7px;
+  }
+  .rule {
+    height: 2px;
+    background: #222;
+    margin: 0 22px 22px;
+  }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 14px;
+  }
+  .meta div { width: 48%; }
+  .meta .right { text-align: right; }
+  .name-row {
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+  .letter p {
+    font-size: 12.6px;
+    line-height: 1.48;
+    margin: 0 0 10px;
+    text-align: justify;
+  }
+  .letter strong { font-weight: 800; }
+  .section-heading {
+    font-size: 14px;
+    font-weight: 900;
+    margin: 14px 0 6px;
+  }
+  .details {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 12px;
+    font-size: 12.4px;
+  }
+  .details td {
+    border: 1px solid #dedede;
+    padding: 7px 11px;
+  }
+  .details td:first-child {
+    width: 170px;
+    font-weight: 800;
+    background: #f7f7f7;
+  }
+  .note {
+    border-left: 4px solid #141b3d;
+    background: #f5f7ff;
+    padding: 10px 13px;
+    margin: 11px 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .signature {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 100px 1fr;
+    align-items: end;
+    gap: 28px;
+  }
+  .sig-block {
+    min-height: 76px;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .sig-script {
+    height: 40px;
+    margin-bottom: 4px;
+    font-family: "Segoe Script", "Brush Script MT", cursive;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    color: #080808;
+    white-space: nowrap;
+  }
+  .sig-name {
+    border-top: 1.5px solid #222;
+    padding-top: 7px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .sig-role {
+    margin-top: 3px;
+    font-size: 10px;
+    color: #666;
+  }
+  .iso-mark {
+    width: 98px;
+    height: 98px;
+    display: block;
+    margin: 0 auto;
+  }
+  .footer {
+    position: absolute;
+    left: 70px;
+    right: 70px;
+    bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    font-size: 10.5px;
+    color: #555;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="corner"></div>
+    <div class="corner-right"></div>
+    <div class="qr">
+      <img src="{{qrCodeDataUrl}}" alt="Verification QR"/>
+      <div>Verify Student ID</div>
+    </div>
+
+    <div class="brand">
+      <div class="brand-name">Career<span>Proof</span></div>
+      <div class="tagline">Skills That Get You Hired</div>
+    </div>
+
+    <div class="title">Internship Offer Letter</div>
+    <div class="rule"></div>
+
+    <div class="meta">
+      <div>{{date}}</div>
+      <div class="right">STUDENT ID: {{candidateId}}</div>
+    </div>
+    <div class="name-row">Name: {{fullName}}</div>
+
+    <div class="letter">
+      <p>Dear <strong>{{fullName}}</strong>,</p>
+
+      <p>We are pleased to inform you that your application for the <strong>{{domain}} Intern</strong> position has been reviewed and accepted by our recruitment team. We are glad to extend this official internship offer under the terms mentioned in this document.</p>
+
+      <p>This communication is in reference to your application submitted to CareerProof. Your profile was evaluated against multiple selection criteria, and our team found your learning interest, technical orientation, and problem-solving approach aligned with the standards and ongoing project requirements of this internship program.</p>
+
+      <p>As a <strong>{{domain}} Intern</strong>, you will actively participate in practical learning tasks, real-world project work, documentation, and portfolio-building activities. Your responsibilities will include completing assigned tasks, maintaining proper communication, submitting work within deadlines, and demonstrating consistent professional conduct throughout the internship tenure.</p>
+
+      <table class="details">
+        <tr><td>Domain / Role</td><td>{{domain}} Intern</td></tr>
+        <tr><td>Start Date</td><td>{{startDate}}</td></tr>
+        <tr><td>End Date</td><td>{{endDate}}</td></tr>
+        <tr><td>Duration</td><td>{{duration}}</td></tr>
+        <tr><td>Mode</td><td>Remote / Online</td></tr>
+      </table>
+
+      <p>Performance evaluation will be based on task completion, consistency, professionalism, communication, and adherence to project milestones. While mentors and coordinators will provide guidance, a proactive and self-driven working approach is expected from every intern.</p>
+
+      <p>The internship tenure is valid from <strong>{{startDate}}</strong> to <strong>{{endDate}}</strong>. Failure to join, communicate, or commence assigned responsibilities within this period may result in withdrawal of this offer without further notice.</p>
+
+      <div class="note"><strong>Important:</strong> Timely task submission and professional conduct are mandatory to receive the internship completion certificate at the end of the internship period.</div>
+
+      <p>We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.</p>
+    </div>
+
+    <div class="signature">
+      <div class="sig-block">
+        <div class="sig-script">Aniket Manwalkar</div>
+        <div class="sig-name">Aniket Manwalkar</div>
+        <div class="sig-role">Authorized Signatory</div>
+      </div>
+      <svg class="iso-mark" viewBox="0 0 120 120" role="img" aria-label="ISO 9001">
+        <defs>
+          <path id="isoCurveOffer" d="M22,55a38,38 0 1,1 76,0"/>
+          <clipPath id="isoClipOffer"><circle cx="60" cy="56" r="26"/></clipPath>
+        </defs>
+        <text font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="700" fill="#0062b8" letter-spacing=".4">
+          <textPath href="#isoCurveOffer" startOffset="50%" text-anchor="middle">International Organization for Standardization</textPath>
+        </text>
+        <g clip-path="url(#isoClipOffer)" fill="none" stroke="#0062b8" stroke-width="1.4" opacity=".95">
+          <circle cx="60" cy="56" r="25"/>
+          <ellipse cx="60" cy="56" rx="10" ry="25"/>
+          <ellipse cx="60" cy="56" rx="25" ry="10"/>
+          <path d="M35 56h50M60 31v50M42 39c12 6 24 6 36 0M42 73c12-6 24-6 36 0"/>
+        </g>
+        <text x="60" y="63" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="34" font-weight="900" fill="#005eb8">ISO</text>
+        <text x="60" y="101" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800" fill="#005eb8">9001</text>
+      </svg>
+      <div class="sig-block">
+        <div class="sig-script">Syeda Quadri</div>
+        <div class="sig-name">Syeda Quadri</div>
+        <div class="sig-role">Program Director</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>CareerProof Internship Program</span>
+      <span>careerproof.services@gmail.com</span>
+      <span>India</span>
+    </div>
+  </div>
+</body>
+</html>

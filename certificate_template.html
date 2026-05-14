@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #f1f5f9;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #151515;
+  }
+  .certificate {
+    width: 1123px;
+    height: 794px;
+    margin: 0 auto;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    padding: 54px 72px 48px;
+  }
+  .border {
+    position: absolute;
+    inset: 30px;
+    border: 2px solid #151515;
+    pointer-events: none;
+  }
+  .inner-border {
+    position: absolute;
+    inset: 40px;
+    border: 1px solid #c8a44d;
+    pointer-events: none;
+  }
+  .accent {
+    position: absolute;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    right: -165px;
+    top: -135px;
+    background: radial-gradient(circle, rgba(0,229,160,.32), rgba(0,153,255,.18) 42%, transparent 66%);
+  }
+  .accent-left {
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    left: -120px;
+    bottom: -118px;
+    background: radial-gradient(circle, rgba(217,30,109,.20), rgba(20,27,61,.14) 48%, transparent 68%);
+  }
+  .watermark-logo {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    width: 680px;
+    height: 680px;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    opacity: .2;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .aicte-mark {
+    position: absolute;
+    left: 66px;
+    top: 54px;
+    width: 112px;
+    height: 112px;
+    z-index: 4;
+  }
+  .qr {
+    position: absolute;
+    right: 66px;
+    top: 58px;
+    width: 100px;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    z-index: 4;
+  }
+  .qr img {
+    width: 88px;
+    height: 88px;
+    display: block;
+    margin: 0 auto 4px;
+    border: 1px solid #d6d6d6;
+    padding: 4px;
+    background: #fff;
+  }
+  .qr div {
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: #141b3d;
+  }
+  .brand {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    color: #141b3d;
+    margin-bottom: 50px;
+  }
+  .brand span { color: #00a977; }
+  .pretitle {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    font-size: 25px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #444;
+    margin-bottom: 22px;
+  }
+  .name {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 54px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #141b3d;
+    text-transform: uppercase;
+    line-height: 1.05;
+    margin-bottom: 24px;
+  }
+  .ack {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    font-size: 24px;
+    color: #555;
+    margin-bottom: 24px;
+  }
+  .title {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: #111;
+    margin-bottom: 22px;
+  }
+  .statement {
+    position: relative;
+    z-index: 2;
+    max-width: 835px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 22px;
+    line-height: 1.55;
+    color: #333;
+  }
+  .statement strong { color: #141b3d; }
+  .bottom {
+    position: absolute;
+    z-index: 2;
+    left: 86px;
+    right: 86px;
+    bottom: 78px;
+    display: grid;
+    grid-template-columns: 1fr 170px 1fr;
+    align-items: end;
+    gap: 36px;
+  }
+  .sig {
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .sig-script {
+    height: 54px;
+    margin-bottom: 4px;
+    font-family: "Segoe Script", "Brush Script MT", cursive;
+    font-size: 38px;
+    font-weight: 400;
+    line-height: 1;
+    color: #080808;
+    white-space: nowrap;
+  }
+  .sig-name {
+    border-top: 1.5px solid #111;
+    padding-top: 8px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #111;
+  }
+  .sig-role {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+  }
+  .iso-mark {
+    width: 142px;
+    height: 142px;
+    display: block;
+    margin: 0 auto 4px;
+  }
+  .meta {
+    position: absolute;
+    z-index: 2;
+    left: 72px;
+    right: 72px;
+    bottom: 38px;
+    display: flex;
+    justify-content: space-between;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    color: #333;
+  }
+</style>
+</head>
+<body>
+  <div class="certificate">
+    <img class="watermark-logo" src="{{backgroundLogoDataUrl}}" alt="CareerProof background logo"/>
+    <div class="accent"></div>
+    <div class="accent-left"></div>
+    <div class="border"></div>
+    <div class="inner-border"></div>
+    <svg class="aicte-mark" viewBox="0 0 120 120" role="img" aria-label="AICTE">
+      <defs>
+        <path id="gearTooth" d="M54 4h12l2 12a45 45 0 0 1 8 2l8-9 10 6-4 12a45 45 0 0 1 6 6l12-4 6 10-9 8a45 45 0 0 1 2 8l12 2v12l-12 2a45 45 0 0 1-2 8l9 8-6 10-12-4a45 45 0 0 1-6 6l4 12-10 6-8-9a45 45 0 0 1-8 2l-2 12H54l-2-12a45 45 0 0 1-8-2l-8 9-10-6 4-12a45 45 0 0 1-6-6l-12 4-6-10 9-8a45 45 0 0 1-2-8L1 69V57l12-2a45 45 0 0 1 2-8l-9-8 6-10 12 4a45 45 0 0 1 6-6l-4-12 10-6 8 9a45 45 0 0 1 8-2z"/>
+        <radialGradient id="aicteFill" cx="50%" cy="42%" r="54%">
+          <stop offset="0%" stop-color="#fff5aa"/>
+          <stop offset="58%" stop-color="#ffd64c"/>
+          <stop offset="100%" stop-color="#f49a16"/>
+        </radialGradient>
+      </defs>
+      <use href="#gearTooth" fill="url(#aicteFill)" stroke="#111" stroke-width="2"/>
+      <circle cx="60" cy="62" r="38" fill="#ffe681" stroke="#ef9b1b" stroke-width="1.5"/>
+      <path id="aicteArc" d="M24,63a36,36 0 1,1 72,0" fill="none"/>
+      <text font-family="Arial, Helvetica, sans-serif" font-size="7.8" font-weight="800" fill="#1f2937">
+        <textPath href="#aicteArc" startOffset="50%" text-anchor="middle">All India Council for Technical Education</textPath>
+      </text>
+      <text x="60" y="59" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="20" font-weight="900" fill="#d71920" stroke="#111" stroke-width=".45">AICTE</text>
+      <text x="60" y="73" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="7.2" font-weight="800" fill="#1f2937">योगः कर्मसु कौशलम्</text>
+      <circle cx="60" cy="90" r="13" fill="#0877bd" stroke="#111" stroke-width="1.2"/>
+      <path d="M60 77l5 19h-10z" fill="#e71921" stroke="#111" stroke-width=".8"/>
+      <path d="M60 94c-6-4-11-3-16 2 6 5 11 4 16-2z" fill="#f5e328" stroke="#111" stroke-width=".8"/>
+      <path d="M60 94c6-4 11-3 16 2-6 5-11 4-16-2z" fill="#f5e328" stroke="#111" stroke-width=".8"/>
+    </svg>
+    <div class="qr">
+      <img src="{{qrCodeDataUrl}}" alt="Verification QR"/>
+      <div>Verify</div>
+    </div>
+
+    <div class="brand">CAREER<span>PROOF</span></div>
+    <div class="pretitle">This acknowledges that</div>
+    <div class="name">{{fullName}}</div>
+    <div class="ack">has successfully completed the</div>
+    <div class="title">Certificate of Internship</div>
+
+    <div class="statement">
+      Has worked as a <strong>{{domain}} Intern</strong> with us from
+      <strong>{{startDate}}</strong> to <strong>{{endDate}}</strong>, demonstrating sincerity,
+      enthusiasm, discipline, and strong professional skills. We wish them the best in their future endeavors.
+    </div>
+
+    <div class="bottom">
+      <div class="sig">
+        <div class="sig-script">Aniket Manwalkar</div>
+        <div class="sig-name">Aniket Manwalkar</div>
+        <div class="sig-role">Authorized Signatory</div>
+      </div>
+      <svg class="iso-mark" viewBox="0 0 120 120" role="img" aria-label="ISO 9001">
+        <defs>
+          <path id="isoCurveCert" d="M22,55a38,38 0 1,1 76,0"/>
+          <clipPath id="isoClipCert"><circle cx="60" cy="56" r="26"/></clipPath>
+        </defs>
+        <text font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="700" fill="#0062b8" letter-spacing=".4">
+          <textPath href="#isoCurveCert" startOffset="50%" text-anchor="middle">International Organization for Standardization</textPath>
+        </text>
+        <g clip-path="url(#isoClipCert)" fill="none" stroke="#0062b8" stroke-width="1.4" opacity=".95">
+          <circle cx="60" cy="56" r="25"/>
+          <ellipse cx="60" cy="56" rx="10" ry="25"/>
+          <ellipse cx="60" cy="56" rx="25" ry="10"/>
+          <path d="M35 56h50M60 31v50M42 39c12 6 24 6 36 0M42 73c12-6 24-6 36 0"/>
+        </g>
+        <text x="60" y="63" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="34" font-weight="900" fill="#005eb8">ISO</text>
+        <text x="60" y="101" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800" fill="#005eb8">9001</text>
+      </svg>
+      <div class="sig">
+        <div class="sig-script">Syeda Quadri</div>
+        <div class="sig-name">Syeda Quadri</div>
+        <div class="sig-role">CareerProof</div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div>Issue Date: {{issueDate}}</div>
+      <div>Credential ID: {{certificateId}}</div>
+    </div>
+  </div>
+</body>
+</html>
