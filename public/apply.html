@@ -485,15 +485,121 @@
     /* responsive */
     @media (max-width: 900px) {
       .page { grid-template-columns: 1fr; }
-      .left-panel { position: static; height: auto; padding: 40px 28px; }
+      .left-panel {
+        position: static;
+        height: auto;
+        padding: 34px 28px 24px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
       .right-panel { padding: 40px 28px; }
       nav { padding: 16px 24px; }
       .tracker { display: none; }
+      .left-sub { margin-bottom: 0; }
+      .left-trust { display: none; }
     }
     @media (max-width: 600px) {
+      body { font-size: 15px; }
+      nav {
+        padding: 14px 18px;
+        gap: 14px;
+      }
+      .logo { font-size: 20px; }
+      .nav-back {
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .page { min-height: auto; }
+      .bg-blob { filter: blur(78px); opacity: .8; }
+      .blob-tl { width: 320px; height: 320px; top: -120px; left: -140px; }
+      .blob-br { width: 260px; height: 260px; right: -120px; bottom: -80px; }
+      .left-panel { padding: 26px 18px 20px; }
+      .step-badge {
+        font-size: 11px;
+        letter-spacing: 1.2px;
+        margin-bottom: 18px;
+      }
+      .left-title {
+        font-size: clamp(30px, 10vw, 38px);
+        letter-spacing: -1px;
+        margin-bottom: 10px;
+      }
+      .left-sub {
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .form-header { margin-bottom: 28px; }
+      .form-section-label {
+        font-size: 11px;
+        letter-spacing: 2px;
+      }
+      .form-title {
+        font-size: clamp(24px, 7vw, 30px);
+        line-height: 1.1;
+      }
+      .app-form { gap: 24px; }
       .form-row { grid-template-columns: 1fr; }
-      .phone-wrapper { grid-template-columns: 110px 1fr; }
-      .right-panel { padding: 32px 20px; }
+      .phone-wrapper { grid-template-columns: minmax(92px, 108px) 1fr; gap: 8px; }
+      .right-panel { padding: 30px 18px 44px; }
+      input, select, textarea {
+        min-height: 50px;
+        font-size: 16px;
+        padding: 13px 14px;
+      }
+      select { padding-right: 36px; background-position: right 12px center; }
+      .submit-area { align-items: stretch; gap: 12px; }
+      .btn-submit {
+        width: 100%;
+        justify-content: center;
+        min-height: 56px;
+        padding: 15px 18px;
+      }
+      .submit-note { width: 100%; text-align: center; }
+      .success-overlay { padding: 24px 18px; }
+      .success-icon { width: 72px; height: 72px; font-size: 30px; }
+      .success-title { font-size: 34px; }
+      .success-sub { font-size: 14px; }
+      .candidate-id-box {
+        width: 100%;
+        padding: 20px 16px;
+      }
+      .cid-value {
+        font-size: clamp(22px, 8vw, 30px);
+        word-break: break-word;
+      }
+      .payment-gateway {
+        align-items: flex-end;
+        padding: 0;
+      }
+      .gateway-panel {
+        width: 100%;
+        max-height: 88vh;
+        border-radius: 22px 22px 0 0;
+      }
+      .gateway-head { padding: 18px 18px 12px; }
+      .gateway-body { padding: 18px; }
+      .gateway-amount strong { font-size: 26px; }
+      .payment-app {
+        gap: 12px;
+        padding: 12px;
+      }
+      .payment-app-icon {
+        width: 38px;
+        height: 38px;
+      }
+      .payment-app-name { font-size: 14px; }
+      .gateway-pay {
+        min-height: 52px;
+        font-size: 15px;
+      }
+    }
+    @media (max-width: 380px) {
+      nav { padding-inline: 14px; }
+      .nav-back { gap: 0; font-size: 0; }
+      .nav-back svg { width: 18px; height: 18px; }
+      .left-panel { padding-inline: 16px; }
+      .right-panel { padding-inline: 16px; }
+      .phone-wrapper { grid-template-columns: 1fr; }
     }
   </style>
 </head>
