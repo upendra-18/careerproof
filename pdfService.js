@@ -48,7 +48,7 @@ function addBrand(doc, x = 54, y = 42) {
 function addIsoMark(doc, x, y, size) {
   const isoPath = path.join(__dirname, 'assets', 'iso-9001.png');
   if (fs.existsSync(isoPath)) {
-    doc.image(isoPath, x, y, { width: size });
+    doc.image(isoPath, x, y, { fit: [size, size], align: 'center', valign: 'center' });
     return;
   }
 
@@ -73,14 +73,34 @@ function addAicteMark(doc, x, y, size) {
 
 function addSignature(doc, name, role, x, y, width, imageName) {
   const signaturePath = imageName ? path.join(__dirname, 'assets', imageName) : null;
+  const imageHeight = 26;
+  const lineY = y + 42;
   if (signaturePath && fs.existsSync(signaturePath)) {
-    doc.image(signaturePath, x + 8, y, { width: width - 16 });
+    doc.image(signaturePath, x + 8, y, { fit: [width - 16, imageHeight], align: 'center', valign: 'center' });
   } else {
-    doc.font('Times-Italic').fontSize(26).fillColor('#080808').text(name, x, y, { width, align: 'center' });
+    doc.font('Times-Italic').fontSize(22).fillColor('#080808').text(name, x, y + 4, { width, align: 'center' });
   }
-  doc.moveTo(x, y + 48).lineTo(x + width, y + 48).lineWidth(1).strokeColor('#111111').stroke();
-  doc.font('Helvetica-Bold').fontSize(11).fillColor('#111111').text(name, x, y + 55, { width, align: 'center' });
-  doc.font('Helvetica').fontSize(9.5).fillColor('#666666').text(role, x, y + 70, { width, align: 'center' });
+  doc.moveTo(x, lineY).lineTo(x + width, lineY).lineWidth(1).strokeColor('#111111').stroke();
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('#111111').text(name, x, lineY + 7, { width, align: 'center' });
+  doc.font('Helvetica').fontSize(9).fillColor('#666666').text(role, x, lineY + 21, { width, align: 'center' });
+}
+
+function addCertificateBrand(doc, y) {
+  const fontSize = 16;
+  const centerX = doc.page.width / 2;
+  const career = 'CAREER';
+  const proof = 'PROOF';
+  const spacing = 12;
+
+  doc.font('Helvetica-Bold').fontSize(fontSize);
+  const careerWidth = doc.widthOfString(career, { characterSpacing: spacing });
+  const proofWidth = doc.widthOfString(proof, { characterSpacing: spacing });
+  const gap = 8;
+  const totalWidth = careerWidth + proofWidth + gap;
+  const startX = centerX - totalWidth / 2;
+
+  doc.fillColor('#141b3d').text(career, startX, y, { characterSpacing: spacing });
+  doc.fillColor('#00a977').text(proof, startX + careerWidth + gap, y, { characterSpacing: spacing });
 }
 
 function textBlock(doc, text, x, y, width, options = {}) {
@@ -160,7 +180,7 @@ async function generateOfferLetterPDF(applicantData) {
   doc.font('Helvetica-Bold').fontSize(8.6).fillColor('#333333').text('We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.', contentX, 612, { width: contentWidth });
 
   addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 64, 648, 190, 'signature-aniket.png');
-  addIsoMark(doc, 272, 656, 58);
+  addIsoMark(doc, 272, 655, 48);
   addSignature(doc, 'Syeda Quadri', 'Program Director', 344, 648, 190, 'signature-syeda.png');
 
   doc.font('Helvetica').fontSize(9).fillColor('#555555')
@@ -200,8 +220,7 @@ async function generateCertificatePDF(applicantData) {
   doc.image(qrBuffer, doc.page.width - 120, 48, { width: 64 });
   doc.font('Helvetica-Bold').fontSize(6).fillColor('#141b3d').text('VERIFY', doc.page.width - 125, 116, { width: 74, align: 'center' });
 
-  doc.font('Helvetica-Bold').fontSize(16).fillColor('#141b3d').text('C A R E E R', 0, 46, { width: doc.page.width, align: 'center', continued: true });
-  doc.fillColor('#00a977').text(' P R O O F');
+  addCertificateBrand(doc, 46);
   doc.font('Times-Roman').fontSize(18).fillColor('#444444').text('T H I S  A C K N O W L E D G E S  T H A T', 0, 102, { width: doc.page.width, align: 'center' });
   doc.font('Helvetica-Bold').fontSize(34).fillColor('#141b3d').text(fullName.toUpperCase(), 90, 142, { width: doc.page.width - 180, align: 'center' });
   doc.font('Times-Roman').fontSize(16).fillColor('#555555').text('has successfully completed the', 0, 192, { width: doc.page.width, align: 'center' });
