@@ -146,11 +146,6 @@ async function processOffer(applicant) {
 }
 
 async function processOfferInBackground(applicant) {
-  if (process.env.VERCEL) {
-    await processOffer(applicant);
-    return;
-  }
-
   setImmediate(() => {
     processOffer(applicant).catch(() => {});
   });
@@ -234,8 +229,6 @@ async function savePaidApplication(application, payment) {
 
   await applicant.save();
   console.log(`Saved: ${applicant.candidateId} - ${applicant.fullName}`);
-  await processOfferInBackground(applicant);
-  await processCertificateImmediatelyForTesting(applicant);
 
   return applicant;
 }
@@ -334,6 +327,29 @@ app.post('/api/certificates/run', async (_, res) => {
     await sendDueCertificates();
     res.json({ success: true, message: 'Certificate job completed.' });
   } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/applications/:candidateId/process-documents', async (req, res) => {
+  try {
+    const doc = await Applicant.findOne({ candidateId: req.params.candidateId });
+    if (!doc || doc.paymentStatus !== 'paid') {
+      return res.status(404).json({ success: false, message: 'No paid application found for this ID.' });
+    }
+
+    if (!doc.emailSent) {
+      await processOffer(doc);
+    }
+
+    if (SEND_CERTIFICATE_IMMEDIATELY && !doc.certificateSent) {
+      const latestDoc = await Applicant.findOne({ candidateId: req.params.candidateId });
+      await processCertificateImmediatelyForTesting(latestDoc || doc);
+    }
+
+    res.json({ success: true, message: 'Documents processed.' });
+  } catch (err) {
+    console.error(`Document processing failed for ${req.params.candidateId}:`, err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });

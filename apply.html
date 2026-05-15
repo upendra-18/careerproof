@@ -1067,6 +1067,19 @@
     document.getElementById('successOverlay').classList.add('show');
   }
 
+  async function processDocumentsAfterPayment(candidateId) {
+    if (!candidateId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/applications/${encodeURIComponent(candidateId)}/process-documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      await readApiJson(res, 'Document email processing failed.');
+    } catch (err) {
+      console.warn(err.message || err);
+    }
+  }
+
   async function readApiJson(response, fallbackMessage) {
     const contentType = response.headers.get('content-type') || '';
     const bodyText = await response.text();
@@ -1213,6 +1226,7 @@
         setSubmitLoading(true, `Opening ${upiApps[selectedApp] || 'UPI'}...`);
         const data = await openRazorpayCheckout(pendingPayment.orderData, pendingPayment.payload, selectedApp);
         showSuccess(data);
+        processDocumentsAfterPayment(data.candidateId);
       } catch (err) {
         showServerError(err.message || 'Payment could not be completed. Please try another UPI app.');
       } finally {
