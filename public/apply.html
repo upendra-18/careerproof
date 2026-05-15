@@ -539,7 +539,7 @@
           <div class="tracker-dot">3</div>
           <div class="tracker-info">
             <div class="tracker-label">Payment & Submit</div>
-            <div class="tracker-desc">Pay Rs. 199 securely</div>
+            <div class="tracker-desc">Pay Rs. 5 securely</div>
           </div>
         </div>
       </div>
@@ -697,7 +697,7 @@
     <div class="gateway-body">
       <div class="gateway-amount">
         <span>Total Amount</span>
-        <strong>Rs. 199</strong>
+        <strong>Rs. 5</strong>
       </div>
       <h2 class="gateway-title" id="gatewayTitle">Choose payment method</h2>
       <p class="gateway-sub">Use Razorpay test mode now. Choose Card for the fastest dummy transaction, then use Razorpay's test card details.</p>
@@ -719,7 +719,7 @@
           <span><span class="payment-app-name">Netbanking</span><span class="payment-app-meta">Open bank payment options in Razorpay</span></span>
         </button>
       </div>
-      <button class="gateway-pay" type="button" id="gatewayPayBtn">Pay Rs. 199</button>
+      <button class="gateway-pay" type="button" id="gatewayPayBtn">Pay Rs. 5</button>
       <div class="gateway-note">For Razorpay activation, keep test keys in Vercel, choose Card, and complete one dummy payment with Razorpay's test card.</div>
     </div>
   </div>
@@ -997,7 +997,7 @@
   const API_BASE_URL = window.location.origin;
   const PAYMENT_ORDER_URL = `${API_BASE_URL}/api/create-order`;
   const PAYMENT_VERIFY_URL = `${API_BASE_URL}/api/verify-payment`;
-  const PAYMENT_AMOUNT_PAISE = 19900;
+  const PAYMENT_AMOUNT_PAISE = 500;
 
   // ── Date constraints ──────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
@@ -1203,7 +1203,7 @@
         amount: orderData.amount,
         currency: orderData.currency,
         name: orderData.name,
-        description: `${orderData.description} - Rs. 199`,
+        description: `${orderData.description} - Rs. 5`,
         order_id: orderData.orderId,
         prefill: {
           name: payload.fullName,
@@ -1284,7 +1284,7 @@
     } finally {
       pendingPayment = null;
       payBtn.disabled = false;
-      payBtn.textContent = 'Pay Rs. 199';
+      payBtn.textContent = 'Pay Rs. 5';
       setSubmitLoading(false);
     }
   });

@@ -14,7 +14,7 @@ const { sendOfferEmail, sendCertificateEmail } = require('./emailService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const APPLICATION_FEE_INR = 199;
+const APPLICATION_FEE_INR = 5;
 const APPLICATION_FEE_PAISE = APPLICATION_FEE_INR * 100;
 const MINIMUM_PAYMENT_PAISE = 100;
 const isVercel = !!process.env.VERCEL;
