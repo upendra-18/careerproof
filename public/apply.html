@@ -699,35 +699,28 @@
         <span>Total Amount</span>
         <strong>Rs. 199</strong>
       </div>
-      <h2 class="gateway-title" id="gatewayTitle">Choose a payment app</h2>
-      <p class="gateway-sub">Pay securely through Razorpay using UPI apps. On desktop, Razorpay may show UPI ID or QR if app intent is unavailable.</p>
+      <h2 class="gateway-title" id="gatewayTitle">Choose payment method</h2>
+      <p class="gateway-sub">Use Razorpay test mode now. Choose Card for the fastest dummy transaction, then use Razorpay's test card details.</p>
       <div class="payment-apps">
-        <button class="payment-app" type="button" data-upi-app="phonepe">
-          <span class="payment-app-icon phonepe">पे</span>
-          <span><span class="payment-app-name">PhonePe</span><span class="payment-app-meta">Open PhonePe UPI through Razorpay</span></span>
+        <button class="payment-app selected" type="button" data-payment-method="card">
+          <span class="payment-app-icon card">CARD</span>
+          <span><span class="payment-app-name">Credit / Debit Card</span><span class="payment-app-meta">Best for Razorpay test card payment</span></span>
         </button>
-        <button class="payment-app" type="button" data-upi-app="google_pay">
-          <span class="payment-app-icon gpay">G</span>
-          <span><span class="payment-app-name">Google Pay</span><span class="payment-app-meta">Open Google Pay UPI through Razorpay</span></span>
-        </button>
-        <button class="payment-app" type="button" data-upi-app="paytm">
-          <span class="payment-app-icon paytm">Pay</span>
-          <span><span class="payment-app-name">Paytm UPI</span><span class="payment-app-meta">Pay using Paytm UPI</span></span>
-        </button>
-        <button class="payment-app" type="button" data-upi-app="bhim">
-          <span class="payment-app-icon bhim">BH</span>
-          <span><span class="payment-app-name">BHIM UPI</span><span class="payment-app-meta">Pay using BHIM UPI</span></span>
-        </button>
-        <button class="payment-app" type="button" data-upi-app="whatsapp">
-          <span class="payment-app-icon whatsapp">WA</span>
-          <span><span class="payment-app-name">WhatsApp UPI</span><span class="payment-app-meta">Pay using WhatsApp UPI</span></span>
-        </button>
-        <button class="payment-app" type="button" data-upi-app="any">
+        <button class="payment-app" type="button" data-payment-method="upi">
           <span class="payment-app-icon upi">UPI</span>
-          <span><span class="payment-app-name">Other UPI App / QR</span><span class="payment-app-meta">Use any UPI app, UPI ID, or QR if supported</span></span>
+          <span><span class="payment-app-name">UPI / QR</span><span class="payment-app-meta">Google Pay, PhonePe, Paytm, BHIM, or QR</span></span>
+        </button>
+        <button class="payment-app" type="button" data-payment-method="wallet">
+          <span class="payment-app-icon wallet">W</span>
+          <span><span class="payment-app-name">Wallets</span><span class="payment-app-meta">PhonePe, Amazon Pay, Mobikwik, Airtel Money</span></span>
+        </button>
+        <button class="payment-app" type="button" data-payment-method="netbanking">
+          <span class="payment-app-icon bank">BANK</span>
+          <span><span class="payment-app-name">Netbanking</span><span class="payment-app-meta">Open bank payment options in Razorpay</span></span>
         </button>
       </div>
-      <div class="gateway-note">Payment is captured and verified by Razorpay before your application is saved.</div>
+      <button class="gateway-pay" type="button" id="gatewayPayBtn">Pay Rs. 199</button>
+      <div class="gateway-note">For Razorpay activation, keep test keys in Vercel, choose Card, and complete one dummy payment with Razorpay's test card.</div>
     </div>
   </div>
 </div>
@@ -934,6 +927,11 @@
     transform: translateY(-1px);
     box-shadow: 0 12px 24px rgba(0,169,119,.12);
   }
+  .payment-app.selected {
+    border-color: #00a977;
+    background: #effff9;
+    box-shadow: inset 0 0 0 1px rgba(0,169,119,.18);
+  }
   .payment-app-icon {
     width: 42px;
     height: 42px;
@@ -950,6 +948,9 @@
   .payment-app-icon.bhim { background: #f58220; }
   .payment-app-icon.whatsapp { background: #25d366; }
   .payment-app-icon.upi { background: #1f2937; }
+  .payment-app-icon.card { background: #0f766e; font-size: 11px; }
+  .payment-app-icon.wallet { background: #7c3aed; }
+  .payment-app-icon.bank { background: #2563eb; font-size: 10px; }
   .payment-app-name {
     display: block;
     font-weight: 800;
@@ -969,6 +970,22 @@
     color: #7a4a05;
     font-size: 12px;
     line-height: 1.45;
+  }
+  .gateway-pay {
+    width: 100%;
+    margin-top: 16px;
+    border: 0;
+    border-radius: 14px;
+    background: #00e5a0;
+    color: #06120f;
+    font-weight: 900;
+    font-size: 16px;
+    padding: 15px 18px;
+    cursor: pointer;
+  }
+  .gateway-pay:disabled {
+    cursor: not-allowed;
+    opacity: .65;
   }
 </style>
 
@@ -1097,18 +1114,17 @@
   }
 
   let pendingPayment = null;
+  let selectedPaymentMethod = 'card';
 
-  const upiApps = {
-    phonepe: 'PhonePe',
-    google_pay: 'Google Pay',
-    paytm: 'Paytm UPI',
-    bhim: 'BHIM UPI',
-    whatsapp: 'WhatsApp UPI',
-    any: 'Any UPI App',
+  const paymentMethods = {
+    card: 'Card',
+    upi: 'UPI',
+    wallet: 'Wallet',
+    netbanking: 'Netbanking',
   };
 
-  function showPaymentGateway(orderData, payload) {
-    pendingPayment = { orderData, payload };
+  function showPaymentGateway(payload) {
+    pendingPayment = { payload };
     document.getElementById('paymentGateway').classList.add('show');
     document.getElementById('paymentGateway').setAttribute('aria-hidden', 'false');
   }
@@ -1118,22 +1134,20 @@
     document.getElementById('paymentGateway').setAttribute('aria-hidden', 'true');
   }
 
-  function buildRazorpayConfig(selectedApp) {
-    const upiInstrument = selectedApp && selectedApp !== 'any'
-      ? { method: 'upi', flows: ['intent', 'collect', 'qr'], apps: [selectedApp] }
-      : { method: 'upi', flows: ['intent', 'collect', 'qr'] };
-
+  function buildRazorpayConfig(selectedMethod) {
     return {
       display: {
         blocks: {
-          upi_apps: {
-            name: selectedApp && selectedApp !== 'any'
-              ? `Pay with ${upiApps[selectedApp]}`
-              : 'Pay using UPI apps',
-            instruments: [upiInstrument],
+          cards: {
+            name: 'Cards',
+            instruments: [{ method: 'card' }],
           },
-          app_wallets: {
-            name: 'Payment app wallets',
+          upi: {
+            name: 'UPI / QR',
+            instruments: [{ method: 'upi', flows: ['intent', 'collect', 'qr'] }],
+          },
+          wallets: {
+            name: 'Wallets',
             instruments: [
               { method: 'wallet', wallets: ['phonepe'] },
               { method: 'wallet', wallets: ['amazonpay'] },
@@ -1141,8 +1155,18 @@
               { method: 'wallet', wallets: ['airtelmoney'] },
             ],
           },
+          banks: {
+            name: 'Netbanking',
+            instruments: [{ method: 'netbanking' }],
+          },
         },
-        sequence: ['block.upi_apps', 'block.app_wallets'],
+        sequence: selectedMethod === 'upi'
+          ? ['block.upi', 'block.cards', 'block.wallets', 'block.banks']
+          : selectedMethod === 'wallet'
+            ? ['block.wallets', 'block.cards', 'block.upi', 'block.banks']
+            : selectedMethod === 'netbanking'
+              ? ['block.banks', 'block.cards', 'block.upi', 'block.wallets']
+              : ['block.cards', 'block.upi', 'block.wallets', 'block.banks'],
         preferences: {
           show_default_blocks: true,
         },
@@ -1150,7 +1174,18 @@
     };
   }
 
-  function openRazorpayCheckout(orderData, payload, selectedApp) {
+  async function createPaymentOrder(payload) {
+    const orderRes = await fetch(PAYMENT_ORDER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const orderData = await readApiJson(orderRes, 'Could not start payment.');
+    if (!orderRes.ok || !orderData.success) throw new Error(orderData.message || 'Could not start payment.');
+    return orderData;
+  }
+
+  function openRazorpayCheckout(orderData, payload, selectedMethod) {
     return new Promise((resolve, reject) => {
       if (!window.Razorpay) {
         reject(new Error('Razorpay checkout could not be loaded. Please check your internet connection.'));
@@ -1172,7 +1207,7 @@
         notes: {
           purpose: 'CareerProof application fee',
         },
-        config: buildRazorpayConfig(selectedApp),
+        config: buildRazorpayConfig(selectedMethod),
         theme: {
           color: '#00E5A0',
         },
@@ -1217,23 +1252,35 @@
   });
 
   document.querySelectorAll('.payment-app').forEach(button => {
-    button.addEventListener('click', async function () {
-      if (!pendingPayment) return;
-      const selectedApp = this.dataset.upiApp || 'any';
-      closePaymentGateway();
-
-      try {
-        setSubmitLoading(true, `Opening ${upiApps[selectedApp] || 'UPI'}...`);
-        const data = await openRazorpayCheckout(pendingPayment.orderData, pendingPayment.payload, selectedApp);
-        showSuccess(data);
-        processDocumentsAfterPayment(data.candidateId);
-      } catch (err) {
-        showServerError(err.message || 'Payment could not be completed. Please try another UPI app.');
-      } finally {
-        pendingPayment = null;
-        setSubmitLoading(false);
-      }
+    button.addEventListener('click', function () {
+      selectedPaymentMethod = this.dataset.paymentMethod || 'card';
+      document.querySelectorAll('.payment-app').forEach(item => item.classList.remove('selected'));
+      this.classList.add('selected');
     });
+  });
+
+  document.getElementById('gatewayPayBtn').addEventListener('click', async function () {
+    if (!pendingPayment) return;
+    const payBtn = this;
+
+    try {
+      payBtn.disabled = true;
+      payBtn.textContent = `Opening ${paymentMethods[selectedPaymentMethod]}...`;
+      setSubmitLoading(true, 'Starting payment...');
+      const orderData = await createPaymentOrder(pendingPayment.payload);
+      closePaymentGateway();
+      const data = await openRazorpayCheckout(orderData, pendingPayment.payload, selectedPaymentMethod);
+      showSuccess(data);
+      processDocumentsAfterPayment(data.candidateId);
+    } catch (err) {
+      closePaymentGateway();
+      showServerError(err.message || 'Payment could not be completed. Please try again.');
+    } finally {
+      pendingPayment = null;
+      payBtn.disabled = false;
+      payBtn.textContent = 'Pay Rs. 199';
+      setSubmitLoading(false);
+    }
   });
 
   // Form submit -> Razorpay payment -> verified backend save
@@ -1276,22 +1323,7 @@
       duration:    document.getElementById('duration').value,
     };
 
-    try {
-      setSubmitLoading(true, 'Starting payment...');
-      const orderRes = await fetch(PAYMENT_ORDER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const orderData = await readApiJson(orderRes, 'Could not start payment.');
-      if (!orderRes.ok || !orderData.success) throw new Error(orderData.message || 'Could not start payment.');
-
-      setSubmitLoading(false);
-      showPaymentGateway(orderData, payload);
-    } catch (err) {
-      showServerError(err.message || 'Something went wrong. Please try again.');
-      setSubmitLoading(false);
-    }
+    showPaymentGateway(payload);
   });
 </script>
 </body>
