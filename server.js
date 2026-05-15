@@ -36,9 +36,7 @@ function getRazorpayMode(keyId) {
 
 const razorpayMode = getRazorpayMode(process.env.RAZORPAY_KEY_ID);
 
-if (isProduction && razorpayMode !== 'live') {
-  throw new Error('Production payments require a live Razorpay key ID starting with rzp_live_.');
-}
+const razorpayProductionMisconfigured = isProduction && razorpayMode !== 'live';
 
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
@@ -254,6 +252,12 @@ app.post('/api/payment/order', async (req, res) => {
   try {
     if (!razorpay) {
       return res.status(500).json({ success: false, message: 'Razorpay is not configured on the server.' });
+    }
+    if (razorpayProductionMisconfigured) {
+      return res.status(500).json({
+        success: false,
+        message: 'Live Razorpay keys are not configured on the server.',
+      });
     }
 
     const { error } = validateApplicationPayload(req.body);
