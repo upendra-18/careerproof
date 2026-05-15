@@ -269,7 +269,14 @@ app.post('/api/payment/order', async (req, res) => {
     });
   } catch (err) {
     console.error('Razorpay order error:', err);
-    res.status(500).json({ success: false, message: 'Could not start payment.' });
+    const razorpayMessage = err.error?.description || err.message || '';
+    const isAuthError = /authentication failed/i.test(razorpayMessage);
+    res.status(500).json({
+      success: false,
+      message: isAuthError
+        ? 'Razorpay authentication failed. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are matching test keys.'
+        : 'Could not start payment.',
+    });
   }
 });
 
