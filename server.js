@@ -16,10 +16,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const APPLICATION_FEE_INR = 199;
 const isVercel = !!process.env.VERCEL;
-const isProduction =
-  process.env.NODE_ENV === 'production' ||
-  process.env.VERCEL_ENV === 'production' ||
-  process.env.APP_ENV === 'production';
 const SEND_CERTIFICATE_IMMEDIATELY = process.env.SEND_CERTIFICATE_IMMEDIATELY === 'true';
 
 app.use(cors({ origin: '*' }));
@@ -35,8 +31,6 @@ function getRazorpayMode(keyId) {
 }
 
 const razorpayMode = getRazorpayMode(process.env.RAZORPAY_KEY_ID);
-
-const razorpayProductionMisconfigured = isProduction && razorpayMode !== 'live';
 
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
@@ -252,12 +246,6 @@ app.post('/api/payment/order', async (req, res) => {
   try {
     if (!razorpay) {
       return res.status(500).json({ success: false, message: 'Razorpay is not configured on the server.' });
-    }
-    if (razorpayProductionMisconfigured) {
-      return res.status(500).json({
-        success: false,
-        message: 'Live Razorpay keys are not configured on the server.',
-      });
     }
 
     const { error } = validateApplicationPayload(req.body);
