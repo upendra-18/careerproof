@@ -9,13 +9,13 @@ User clicks "Submit Application"
         |
 Frontend validates the form
         |
-POST /api/payment/order creates a Razorpay order for INR 199
+POST /api/create-order creates a Razorpay order for INR 199
         |
 Razorpay Checkout opens
         |
 Payment succeeds
         |
-POST /api/payment/verify verifies the Razorpay signature on the server
+POST /api/verify-payment verifies the Razorpay signature on the server
         |
 Application is saved to MongoDB
         |
@@ -70,8 +70,10 @@ http://localhost:5000/apply.html
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/payment/order` | Validates form data and creates a Razorpay order for INR 199 |
-| `POST` | `/api/payment/verify` | Verifies Razorpay payment and saves the application to MongoDB |
+| `POST` | `/api/create-order` | Creates a Razorpay Standard Checkout order for INR 199 |
+| `POST` | `/api/verify-payment` | Verifies Razorpay signature and saves the paid application to MongoDB |
+| `POST` | `/api/payment/order` | Backward-compatible alias for the older payment order route |
+| `POST` | `/api/payment/verify` | Backward-compatible alias for the older payment verification route |
 | `GET` | `/api/applications` | Lists saved applicants |
 | `GET` | `/api/applications/:candidateId` | Gets one applicant |
 | `POST` | `/api/certificates/run` | Manually runs the due-certificate email job |

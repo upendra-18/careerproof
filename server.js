@@ -15,6 +15,8 @@ const { sendOfferEmail, sendCertificateEmail } = require('./emailService');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const APPLICATION_FEE_INR = 199;
+const APPLICATION_FEE_PAISE = APPLICATION_FEE_INR * 100;
+const MINIMUM_PAYMENT_PAISE = 100;
 const isVercel = !!process.env.VERCEL;
 const SEND_CERTIFICATE_IMMEDIATELY = process.env.SEND_CERTIFICATE_IMMEDIATELY === 'true';
 
@@ -242,25 +244,53 @@ async function savePaidApplication(application, payment) {
   return applicant;
 }
 
-app.post('/api/payment/order', async (req, res) => {
+function hasApplicationPayload(body) {
+  return ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'duration']
+    .some(field => body?.[field] !== undefined);
+}
+
+function getPaymentVerificationFields(body) {
+  return {
+    razorpay_order_id: body.razorpay_order_id || body.order_id,
+    razorpay_payment_id: body.razorpay_payment_id || body.payment_id,
+    razorpay_signature: body.razorpay_signature || body.signature,
+  };
+}
+
+function isRazorpayAuthError(err) {
+  const message = err.error?.description || err.message || '';
+  return /authentication failed/i.test(message);
+}
+
+async function handleCreateOrder(req, res, options = {}) {
   try {
     if (!razorpay) {
       return res.status(500).json({ success: false, message: 'Razorpay is not configured on the server.' });
     }
 
-    const { error } = validateApplicationPayload(req.body);
-    if (error) return res.status(400).json({ success: false, message: error });
+    const amount = Number(req.body.amount || APPLICATION_FEE_PAISE);
+    if (!Number.isInteger(amount) || amount < MINIMUM_PAYMENT_PAISE) {
+      return res.status(400).json({ success: false, message: 'Amount must be at least 100 paise.' });
+    }
+
+    const application = req.body.application || req.body;
+    if (options.requireApplication || hasApplicationPayload(application)) {
+      const { error } = validateApplicationPayload(application);
+      if (error) return res.status(400).json({ success: false, message: error });
+    }
 
     const order = await razorpay.orders.create({
-      amount: APPLICATION_FEE_INR * 100,
-      currency: 'INR',
-      receipt: `careerproof_${Date.now()}`,
+      amount,
+      currency: (req.body.currency || 'INR').toUpperCase(),
+      receipt: req.body.receipt || `careerproof_${Date.now()}`,
       notes: { purpose: 'CareerProof application fee' },
     });
 
     res.json({
       success: true,
+      key_id: process.env.RAZORPAY_KEY_ID,
       keyId: process.env.RAZORPAY_KEY_ID,
+      order_id: order.id,
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
@@ -269,26 +299,28 @@ app.post('/api/payment/order', async (req, res) => {
     });
   } catch (err) {
     console.error('Razorpay order error:', err);
-    const razorpayMessage = err.error?.description || err.message || '';
-    const isAuthError = /authentication failed/i.test(razorpayMessage);
-    res.status(500).json({
+    res.status(isRazorpayAuthError(err) ? 401 : 500).json({
       success: false,
-      message: isAuthError
+      message: isRazorpayAuthError(err)
         ? 'Razorpay authentication failed. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are matching test keys.'
         : 'Could not start payment.',
     });
   }
-});
+}
 
-app.post('/api/payment/verify', async (req, res) => {
+async function handleVerifyPayment(req, res, options = {}) {
   try {
     if (!razorpay) {
       return res.status(500).json({ success: false, message: 'Razorpay is not configured on the server.' });
     }
 
-    const { application, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    if (!application || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    const { application } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = getPaymentVerificationFields(req.body);
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: 'Missing payment verification details.' });
+    }
+    if (options.requireApplication && !application) {
+      return res.status(400).json({ success: false, message: 'Missing application details.' });
     }
 
     const expectedSignature = crypto
@@ -302,11 +334,20 @@ app.post('/api/payment/verify', async (req, res) => {
 
     let payment = await razorpay.payments.fetch(razorpay_payment_id);
     if (payment.status === 'authorized') {
-      payment = await razorpay.payments.capture(razorpay_payment_id, APPLICATION_FEE_INR * 100, 'INR');
+      payment = await razorpay.payments.capture(razorpay_payment_id, APPLICATION_FEE_PAISE, 'INR');
     }
 
-    if (payment.status !== 'captured' || payment.amount !== APPLICATION_FEE_INR * 100 || payment.currency !== 'INR') {
+    if (payment.status !== 'captured' || payment.amount !== APPLICATION_FEE_PAISE || payment.currency !== 'INR') {
       return res.status(400).json({ success: false, message: 'Payment was not captured for the expected amount.' });
+    }
+
+    if (!application) {
+      return res.json({
+        success: true,
+        message: 'Payment signature verified.',
+        razorpay_order_id,
+        razorpay_payment_id,
+      });
     }
 
     const { error, value } = validateApplicationPayload(application);
@@ -327,8 +368,18 @@ app.post('/api/payment/verify', async (req, res) => {
   } catch (err) {
     if (err.code === 11000) return res.status(500).json({ success: false, message: 'ID collision - retry.' });
     console.error('Payment verify error:', err);
-    res.status(500).json({ success: false, message: 'Could not verify payment or save application.' });
+    res.status(isRazorpayAuthError(err) ? 401 : 500).json({ success: false, message: 'Could not verify payment or save application.' });
   }
+}
+
+app.post('/api/create-order', (req, res) => handleCreateOrder(req, res));
+
+app.post('/api/payment/order', (req, res) => handleCreateOrder(req, res, { requireApplication: true }));
+
+app.post('/api/verify-payment', (req, res) => handleVerifyPayment(req, res));
+
+app.post('/api/payment/verify', (req, res) => {
+  handleVerifyPayment(req, res, { requireApplication: true });
 });
 
 app.post('/api/apply', async (_, res) => {

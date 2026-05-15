@@ -995,8 +995,9 @@
   // CONFIG — change this to your server URL when deployed
   // ─────────────────────────────────────────────────────────────
   const API_BASE_URL = window.location.origin;
-  const PAYMENT_ORDER_URL = `${API_BASE_URL}/api/payment/order`;
-  const PAYMENT_VERIFY_URL = `${API_BASE_URL}/api/payment/verify`;
+  const PAYMENT_ORDER_URL = `${API_BASE_URL}/api/create-order`;
+  const PAYMENT_VERIFY_URL = `${API_BASE_URL}/api/verify-payment`;
+  const PAYMENT_AMOUNT_PAISE = 19900;
 
   // ── Date constraints ──────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
@@ -1178,7 +1179,12 @@
     const orderRes = await fetch(PAYMENT_ORDER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        amount: PAYMENT_AMOUNT_PAISE,
+        currency: 'INR',
+        receipt: `careerproof_${Date.now()}`,
+        application: payload,
+      }),
     });
     const orderData = await readApiJson(orderRes, 'Could not start payment.');
     if (!orderRes.ok || !orderData.success) throw new Error(orderData.message || 'Could not start payment.');
