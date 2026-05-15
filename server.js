@@ -16,12 +16,29 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const APPLICATION_FEE_INR = 199;
 const isVercel = !!process.env.VERCEL;
+const isProduction =
+  process.env.NODE_ENV === 'production' ||
+  process.env.VERCEL_ENV === 'production' ||
+  process.env.APP_ENV === 'production';
 const SEND_CERTIFICATE_IMMEDIATELY = process.env.SEND_CERTIFICATE_IMMEDIATELY === 'true';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+
+function getRazorpayMode(keyId) {
+  if (!keyId) return 'missing';
+  if (keyId.startsWith('rzp_live_')) return 'live';
+  if (keyId.startsWith('rzp_test_')) return 'test';
+  return 'unknown';
+}
+
+const razorpayMode = getRazorpayMode(process.env.RAZORPAY_KEY_ID);
+
+if (isProduction && razorpayMode !== 'live') {
+  throw new Error('Production payments require a live Razorpay key ID starting with rzp_live_.');
+}
 
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
@@ -502,7 +519,7 @@ if (require.main === module) {
         console.log(`\nCareerProof API  ->  http://localhost:${PORT}`);
         console.log(`MongoDB          ->  ${(process.env.MONGODB_URI || '').slice(0, 42)}...`);
         console.log(`Email provider   ->  ${process.env.EMAIL_PROVIDER || 'gmail'}`);
-        console.log(`Razorpay         ->  ${razorpay ? 'configured' : 'missing keys'}\n`);
+        console.log(`Razorpay         ->  ${razorpay ? `${razorpayMode} keys configured` : 'missing keys'}\n`);
       });
 
       sendDueCertificates().catch(err => console.error('Certificate startup job failed:', err.message));

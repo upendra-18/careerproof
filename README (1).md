@@ -45,6 +45,7 @@ Required values:
 | Variable | Description |
 |---|---|
 | `PORT` | API port, defaults to `5000` |
+| `APP_ENV` | Use `development` locally; use `production` only for production safeguards outside Vercel |
 | `RAZORPAY_KEY_ID` | Razorpay test/live key ID |
 | `RAZORPAY_KEY_SECRET` | Razorpay test/live key secret |
 | `MONGODB_URI` | MongoDB Atlas or local MongoDB connection string |
@@ -82,6 +83,11 @@ http://localhost:5000/apply.html
 ## Notes
 
 - Use Razorpay test keys while developing.
+- To accept real payments, replace production environment variables with Razorpay live keys:
+  - `RAZORPAY_KEY_ID` must start with `rzp_live_`
+  - `RAZORPAY_KEY_SECRET` must be the matching live secret from the same Razorpay account
+  - On Vercel, set these under Project Settings -> Environment Variables for Production, then redeploy
+- Production startup rejects test keys, so a deployed production app cannot accidentally charge through Razorpay test mode.
 - The frontend API base URL is in `apply.html` as `API_BASE_URL`.
 - Public PDF QR codes point to `PUBLIC_BASE_URL/verify.html?id=<studentId>`.
 - Generated offer PDFs are stored temporarily in `generated_pdfs/` and cleaned after email processing.
