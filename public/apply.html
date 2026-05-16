@@ -774,17 +774,10 @@
           <input type="date" id="startDate" name="startDate" min="" />
           <span class="error-msg">Please select a start date.</span>
         </div>
-        <div class="field" id="f-duration">
-          <label for="duration">Internship Duration <span class="req">*</span></label>
-          <select id="duration" name="duration">
-            <option value="" disabled selected>Select duration</option>
-            <option value="1">1 Month</option>
-            <option value="2">2 Months</option>
-            <option value="3">3 Months</option>
-            <option value="4">4 Months</option>
-            <option value="6">6 Months</option>
-          </select>
-          <span class="error-msg">Please select a duration.</span>
+        <div class="field" id="f-enddate">
+          <label for="endDate">Internship End Date <span class="req">*</span></label>
+          <input type="date" id="endDate" name="endDate" />
+          <span class="error-msg">Please select an internship end date.</span>
         </div>
       </div>
 
@@ -1129,7 +1122,7 @@
 
   // ── Live progress tracker ─────────────────────────────────────
   const personalFields = ['fullName','dob','email','phone'];
-  const programFields  = ['domain','startDate','duration'];
+  const programFields  = ['domain','startDate','endDate'];
 
   function updateTracker() {
     const pDone  = personalFields.every(id => document.getElementById(id).value.trim() !== '');
@@ -1164,7 +1157,7 @@
   document.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('input', function () {
       const map = { fullName:'name', dob:'dob', email:'email', phone:'phone',
-                    domain:'domain', startDate:'startdate', duration:'duration' };
+                    domain:'domain', startDate:'startdate', endDate:'enddate' };
       if (map[this.id]) setError(map[this.id], false);
     });
   });
@@ -1424,7 +1417,7 @@
       { id:'phone',     val: document.getElementById('phone').value.trim(),     ok: validatePhone },
       { id:'domain',    val: document.getElementById('domain').value,           ok: v => v !== '' },
       { id:'startdate', val: document.getElementById('startDate').value,        ok: v => v !== '' },
-      { id:'duration',  val: document.getElementById('duration').value,         ok: v => v !== '' },
+      { id:'enddate',   val: document.getElementById('endDate').value,          ok: v => v !== '' },
     ];
 
     checks.forEach(c => {
@@ -1449,7 +1442,7 @@
       phone:       document.getElementById('phone').value.trim(),
       domain:      document.getElementById('domain').value,
       startDate:   document.getElementById('startDate').value,
-      duration:    document.getElementById('duration').value,
+      endDate:     document.getElementById('endDate').value,
     };
 
     showPaymentGateway(payload);

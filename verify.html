@@ -225,7 +225,6 @@
 
           <div class="grid">
             <div class="item"><div class="label">Domain</div><div class="value" id="domain"></div></div>
-            <div class="item"><div class="label">Duration</div><div class="value" id="duration"></div></div>
             <div class="item"><div class="label">Start Date</div><div class="value" id="startDate"></div></div>
             <div class="item"><div class="label">End Date</div><div class="value" id="endDate"></div></div>
             <div class="item"><div class="label">Payment</div><div class="value" id="paymentStatus"></div></div>
@@ -273,7 +272,6 @@
       document.getElementById('fullName').textContent = data.fullName;
       document.getElementById('candidateId').textContent = data.candidateId;
       document.getElementById('domain').textContent = data.domain;
-      document.getElementById('duration').textContent = data.duration;
       document.getElementById('startDate').textContent = formatDate(data.startDate);
       document.getElementById('endDate').textContent = formatDate(data.endDate);
       document.getElementById('paymentStatus').textContent = data.paymentStatus === 'paid' ? 'Paid and verified' : data.paymentStatus;

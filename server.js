@@ -101,23 +101,29 @@ const DOMAIN_LABELS = {
   thermalsystems: 'Thermal Systems',
 };
 
+function getDurationLabel(startDate, endDate) {
+  const diffMs = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.max(1, Math.ceil(diffMs / (24 * 60 * 60 * 1000)) + 1);
+  const approxMonths = Math.max(1, Math.round(diffDays / 30));
+  if (diffDays < 45) return `${diffDays} Day${diffDays === 1 ? '' : 's'}`;
+  return `${approxMonths} Month${approxMonths === 1 ? '' : 's'}`;
+}
+
 function validateApplicationPayload(body) {
-  const required = ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'duration'];
+  const required = ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'endDate'];
   const missing = required.filter(field => !body?.[field]?.toString().trim());
   if (missing.length) return { error: `Missing: ${missing.join(', ')}` };
 
-  const { fullName, dateOfBirth, email, countryCode, phone, domain, startDate, duration } = body;
+  const { fullName, dateOfBirth, email, countryCode, phone, domain, startDate, endDate } = body;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Invalid email.' };
 
   const dob = new Date(dateOfBirth);
   const start = new Date(startDate);
-  const durationN = parseInt(duration, 10);
+  const end = new Date(endDate);
   if (Number.isNaN(dob.getTime())) return { error: 'Invalid date of birth.' };
   if (Number.isNaN(start.getTime())) return { error: 'Invalid start date.' };
-  if (!Number.isInteger(durationN) || durationN < 1) return { error: 'Invalid duration.' };
-
-  const end = new Date(start);
-  end.setMonth(end.getMonth() + durationN);
+  if (Number.isNaN(end.getTime())) return { error: 'Invalid internship end date.' };
+  if (end < start) return { error: 'Internship end date cannot be before start date.' };
 
   return {
     value: {
@@ -129,7 +135,7 @@ function validateApplicationPayload(body) {
       domain: DOMAIN_LABELS[domain] || domain,
       startDate: start,
       endDate: end,
-      duration: `${durationN} Month${durationN === 1 ? '' : 's'}`,
+      duration: getDurationLabel(start, end),
     },
   };
 }
@@ -244,6 +250,19 @@ async function sendDueCertificates() {
   }
 }
 
+async function sendCertificateIfDue(applicant) {
+  if (
+    applicant?.paymentStatus === 'paid' &&
+    !applicant.certificateSent &&
+    applicant.endDate &&
+    applicant.endDate <= new Date()
+  ) {
+    await sendCertificateForApplicant(applicant);
+    return true;
+  }
+  return false;
+}
+
 async function savePaidApplication(application, payment) {
   const applicant = new Applicant({
     ...application,
@@ -263,7 +282,7 @@ async function savePaidApplication(application, payment) {
 }
 
 function hasApplicationPayload(body) {
-  return ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'duration']
+  return ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'endDate']
     .some(field => body?.[field] !== undefined);
 }
 
@@ -427,9 +446,12 @@ app.post('/api/applications/:candidateId/process-documents', async (req, res) =>
       await processOffer(doc);
     }
 
-    if (SEND_CERTIFICATE_IMMEDIATELY && !doc.certificateSent) {
-      const latestDoc = await Applicant.findOne({ candidateId: req.params.candidateId });
-      await processCertificateImmediatelyForTesting(latestDoc || doc);
+    const latestDoc = await Applicant.findOne({ candidateId: req.params.candidateId });
+    const certificateDoc = latestDoc || doc;
+    if (SEND_CERTIFICATE_IMMEDIATELY && !certificateDoc.certificateSent) {
+      await processCertificateImmediatelyForTesting(certificateDoc);
+    } else {
+      await sendCertificateIfDue(certificateDoc);
     }
 
     res.json({ success: true, message: 'Documents processed.' });
@@ -454,23 +476,33 @@ app.get('/api/verify/:candidateId', async (req, res) => {
       return res.status(404).json({ success: false, message: 'No verified student record found for this ID.' });
     }
 
+    let latestDoc = doc;
+    try {
+      if (!SEND_CERTIFICATE_IMMEDIATELY) {
+        await sendCertificateIfDue(doc);
+        latestDoc = await Applicant.findOne({ candidateId: req.params.candidateId }) || doc;
+      }
+    } catch (certErr) {
+      console.error(`Certificate auto-send failed for ${doc.candidateId}:`, certErr.message);
+    }
+
     const now = new Date();
-    const isCompleted = SEND_CERTIFICATE_IMMEDIATELY || (doc.endDate && doc.endDate <= now);
+    const isCompleted = SEND_CERTIFICATE_IMMEDIATELY || (latestDoc.endDate && latestDoc.endDate <= now);
     res.json({
       success: true,
       data: {
-        candidateId: doc.candidateId,
-        fullName: doc.fullName,
-        domain: doc.domain,
-        startDate: doc.startDate,
-        endDate: doc.endDate,
-        duration: doc.duration,
-        status: doc.status,
-        paymentStatus: doc.paymentStatus,
-        offerLetterAvailable: !!doc.emailSent,
+        candidateId: latestDoc.candidateId,
+        fullName: latestDoc.fullName,
+        domain: latestDoc.domain,
+        startDate: latestDoc.startDate,
+        endDate: latestDoc.endDate,
+        duration: latestDoc.duration,
+        status: latestDoc.status,
+        paymentStatus: latestDoc.paymentStatus,
+        offerLetterAvailable: !!latestDoc.emailSent,
         certificateAvailable: !!isCompleted,
-        certificateSent: !!doc.certificateSent,
-        certificateId: doc.certificateId || null,
+        certificateSent: !!latestDoc.certificateSent,
+        certificateId: latestDoc.certificateId || null,
       },
     });
   } catch (err) {
