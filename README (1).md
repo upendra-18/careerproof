@@ -9,7 +9,7 @@ User clicks "Submit Application"
         |
 Frontend validates the form
         |
-POST /api/create-order creates a Razorpay order for INR 5
+POST /api/create-order creates a Razorpay order for INR 199
         |
 Razorpay Checkout opens
         |
@@ -70,7 +70,7 @@ http://localhost:5000/apply.html
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/create-order` | Creates a Razorpay Standard Checkout order for INR 5 |
+| `POST` | `/api/create-order` | Creates a Razorpay Standard Checkout order for INR 199 |
 | `POST` | `/api/verify-payment` | Verifies Razorpay signature and saves the paid application to MongoDB |
 | `POST` | `/api/payment/order` | Backward-compatible alias for the older payment order route |
 | `POST` | `/api/payment/verify` | Backward-compatible alias for the older payment verification route |
