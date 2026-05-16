@@ -853,6 +853,7 @@
     <div class="cid-label">Your Candidate ID</div>
     <div class="cid-value" id="candidateIdDisplay">—</div>
     <div class="cid-note">Save this ID — you'll need it to track your application status.</div>
+    <a class="whatsapp-join" id="whatsappJoinLink" href="https://chat.whatsapp.com/LczuM4imlqRHiceUQAibDU" target="_blank" rel="noopener">Join WhatsApp Channel</a>
     <button class="cid-copy" id="copyBtn" onclick="copyId()">📋 Copy ID</button>
   </div>
   <a href="careerproof.html" class="success-back">← Back to Home</a>
@@ -901,6 +902,22 @@
     transition: background 0.2s;
   }
   .cid-copy:hover { background: rgba(0,229,160,0.1); }
+  .whatsapp-join {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto 12px;
+    background: #25d366;
+    color: #06120f;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 800;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+  }
 
   /* loading spinner on button */
   .btn-submit.loading {
@@ -1115,6 +1132,7 @@
   const PAYMENT_ORDER_URL = `${API_BASE_URL}/api/create-order`;
   const PAYMENT_VERIFY_URL = `${API_BASE_URL}/api/verify-payment`;
   const PAYMENT_AMOUNT_PAISE = 500;
+  const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/LczuM4imlqRHiceUQAibDU';
 
   // ── Date constraints ──────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
@@ -1195,6 +1213,7 @@
 
   function showSuccess(data) {
     document.getElementById('candidateIdDisplay').textContent = data.candidateId;
+    document.getElementById('whatsappJoinLink').href = WHATSAPP_GROUP_LINK;
     document.getElementById('successMsg').textContent =
       `Hey ${data.name.split(' ')[0]}! Your payment is complete and your application is saved. Our team will reach out within 24 hours.`;
     document.getElementById('candidateIdBox').style.display = 'block';

@@ -120,18 +120,19 @@ function addAicteMark(doc, x, y, size) {
 
 function addSignature(doc, name, role, x, y, width, imageName) {
   const imgPath = imageName ? resolveAsset(imageName) : null;
-  const lineY   = y + 42;
+  const imageHeight = 52;
+  const lineY   = y + imageHeight + 2;
   if (imgPath) {
-    doc.image(imgPath, x + 8, y, { fit: [width - 16, 26], align: 'center', valign: 'center' });
+    doc.image(imgPath, x + 4, y, { fit: [width - 8, imageHeight], align: 'center', valign: 'bottom' });
   } else {
     doc.font('Times-Italic').fontSize(22).fillColor('#080808')
-      .text(name, x, y + 4, { width, align: 'center' });
+      .text(name, x, y + 16, { width, align: 'center' });
   }
   doc.moveTo(x, lineY).lineTo(x + width, lineY).lineWidth(1).strokeColor('#111111').stroke();
   doc.font('Helvetica-Bold').fontSize(10).fillColor('#111111')
-    .text(name, x, lineY + 7,  { width, align: 'center' });
+    .text(name, x, lineY + 5,  { width, align: 'center' });
   doc.font('Helvetica').fontSize(9).fillColor('#666666')
-    .text(role, x, lineY + 21, { width, align: 'center' });
+    .text(role, x, lineY + 18, { width, align: 'center' });
 }
 
 function addCertificateBrand(doc, y) {

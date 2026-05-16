@@ -67,7 +67,7 @@ async function sendOfferEmail(applicantData, pdfPath) {
     candidateId,
     startDate: formatDate(startDate),
     endDate: endDate ? formatDate(endDate) : '',
-    whatsappLink: process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/',
+    whatsappLink: process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/LczuM4imlqRHiceUQAibDU',
     supportEmail: process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || 'careerproof.services@gmail.com',
     supportPhone: process.env.SUPPORT_PHONE || '+91 9876543210',
   });
