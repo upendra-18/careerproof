@@ -744,6 +744,10 @@
             <option value="analytics">📊 Business Analytics</option>
             <option value="cybersecurity">🔐 Cybersecurity</option>
             <option value="productmgmt">🗂️ Product Management</option>
+            <option value="ece">Electronics & Communication Engineering</option>
+            <option value="eee">Electrical & Electronics Engineering</option>
+            <option value="civil">Civil Engineering</option>
+            <option value="mechanical">Mechanical Engineering</option>
           </select>
           <span class="error-msg">Please select a domain.</span>
         </div>
@@ -1108,7 +1112,6 @@
   // ── Date constraints ──────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('dob').max       = today;
-  document.getElementById('startDate').min = today;
 
   // ── Live progress tracker ─────────────────────────────────────
   const personalFields = ['fullName','dob','email','phone'];
@@ -1440,3 +1443,4 @@
 </script>
 </body>
 </html>
+

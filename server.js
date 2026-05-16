@@ -81,6 +81,10 @@ const DOMAIN_LABELS = {
   analytics: 'Business Analytics',
   cybersecurity: 'Cybersecurity',
   productmgmt: 'Product Management',
+  ece: 'Electronics & Communication Engineering',
+  eee: 'Electrical & Electronics Engineering',
+  civil: 'Civil Engineering',
+  mechanical: 'Mechanical Engineering',
 };
 
 function validateApplicationPayload(body) {
