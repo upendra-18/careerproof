@@ -229,9 +229,9 @@ async function generateOfferLetterPDF(applicantData) {
     .text('We congratulate you on your selection and look forward to your active participation in the CareerProof Internship Program.', cX, 612, { width: cW });
 
   // Signatures row: left sig | ISO badge | right sig
-  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 64,  648, 190, 'signature-aniket.png');
+  addSignature(doc, 'Adithya Mishra', 'Authorized Signatory', 64,  648, 190, 'signature-adithya.png');
   addIsoMark  (doc, 272, 651, 52);   // ISO badge — real image
-  addSignature(doc, 'Syeda Quadri',    'Program Director',      344, 648, 190, 'signature-syeda.png');
+  addSignature(doc, 'Sneha Patel',    'Program Director',      344, 648, 190, 'signature-sneha.png');
 
   // Footer
   doc.font('Helvetica').fontSize(9).fillColor('#555555')
@@ -296,9 +296,9 @@ async function generateCertificatePDF(applicantData) {
       108, 278, { width: PW - 216, align: 'center', lineGap: 4 });
 
   // Signatures row: left | ISO badge (centre) | right
-  addSignature(doc, 'Aniket Manwalkar', 'Authorized Signatory', 70,       390, 240, 'signature-aniket.png');
+  addSignature(doc, 'Adithya Mishra', 'Authorized Signatory', 70,       390, 240, 'signature-adithya.png');
   addIsoMark  (doc, PW / 2 - 50,       374, 100);   // ISO badge — real image
-  addSignature(doc, 'Syeda Quadri',     'CareerProof',          PW - 310, 390, 240, 'signature-syeda.png');
+  addSignature(doc, 'Sneha Patel',     'CareerProof',          PW - 310, 390, 240, 'signature-sneha.png');
 
   // Footer
   doc.font('Helvetica').fontSize(10).fillColor('#333333')
