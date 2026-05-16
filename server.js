@@ -302,7 +302,7 @@ async function handleCreateOrder(req, res, options = {}) {
     res.status(isRazorpayAuthError(err) ? 401 : 500).json({
       success: false,
       message: isRazorpayAuthError(err)
-        ? 'Razorpay authentication failed. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are matching test keys.'
+        ? 'Razorpay authentication failed. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are a matching key pair for the same Razorpay mode.'
         : 'Could not start payment.',
     });
   }
