@@ -295,7 +295,7 @@ async function generateCertificatePDF(applicantData) {
     .text(`Has worked as a ${domain} Intern with us from ${formatDate(startDate)} to ${formatDate(endDate)}, demonstrating sincerity, enthusiasm, discipline, and strong professional skills. We wish them the best in their future endeavors.`,
       108, 278, { width: PW - 216, align: 'center', lineGap: 4 });
 
-  // Signatures row: left | ISO badge (centre) | right
+  // Signatures row: left | ISO badge (centre) |  right
   addSignature(doc, 'Adithya Mishra', 'Authorized Signatory', 70,       390, 240, 'signature-adithya.png');
   addIsoMark  (doc, PW / 2 - 50,       374, 100);   // ISO badge — real image
   addSignature(doc, 'Sneha Patel',     'CareerProof',          PW - 310, 390, 240, 'signature-sneha.png');
