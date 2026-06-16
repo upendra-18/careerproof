@@ -289,7 +289,7 @@ async function generateCertificatePDF(applicantData) {
   doc.font('Helvetica-Bold').fontSize(34).fillColor('#141b3d')
     .text(fullName.toUpperCase(), 90, 142, { width: PW - 180, align: 'center' });
   doc.font('Times-Roman').fontSize(16).fillColor('#555555')
-    .text('has successfully completed the', 0, 192, { width: PW, align: 'center' });
+    .text(`has completed internship on ${domain}`, 0, 192, { width: PW, align: 'center' });
   doc.font('Helvetica-Bold').fontSize(24).fillColor('#111111')
     .text('C E R T I F I C A T E  O F  I N T E R N S H I P', 0, 230, { width: PW, align: 'center' });
   doc.font('Times-Roman').fontSize(15).fillColor('#333333')
