@@ -24,6 +24,13 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
+
+function sendHtmlPage(res, filename) {
+  const rootFile = path.join(__dirname, filename);
+  const publicFile = path.join(__dirname, 'public', filename);
+  res.sendFile(fs.existsSync(rootFile) ? rootFile : publicFile);
+}
 
 function getRazorpayMode(keyId) {
   if (!keyId) return 'missing';
@@ -461,8 +468,16 @@ app.post('/api/applications/:candidateId/process-documents', async (req, res) =>
   }
 });
 
-app.get('/', (_, res) => {
-  res.sendFile(path.join(__dirname, 'careerproof.html'));
+app.get(['/', '/careerproof.html', '/index.html'], (_, res) => {
+  sendHtmlPage(res, 'careerproof.html');
+});
+
+app.get(['/apply', '/apply.html'], (_, res) => {
+  sendHtmlPage(res, 'apply.html');
+});
+
+app.get(['/verify', '/verify.html'], (_, res) => {
+  sendHtmlPage(res, 'verify.html');
 });
 
 app.get('/careerride.html', (_, res) => {
