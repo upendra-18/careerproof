@@ -15,11 +15,31 @@ const { sendOfferEmail, sendCertificateEmail } = require('./emailService');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const APPLICATION_FEE_INR = 199;
+const APPLICATION_FEE_PAISE = APPLICATION_FEE_INR * 100;
+const MINIMUM_PAYMENT_PAISE = 100;
+const isVercel = !!process.env.VERCEL;
+const SEND_CERTIFICATE_IMMEDIATELY = process.env.SEND_CERTIFICATE_IMMEDIATELY === 'true';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
+
+function sendHtmlPage(res, filename) {
+  const rootFile = path.join(__dirname, filename);
+  const publicFile = path.join(__dirname, 'public', filename);
+  res.sendFile(fs.existsSync(rootFile) ? rootFile : publicFile);
+}
+
+function getRazorpayMode(keyId) {
+  if (!keyId) return 'missing';
+  if (keyId.startsWith('rzp_live_')) return 'live';
+  if (keyId.startsWith('rzp_test_')) return 'test';
+  return 'unknown';
+}
+
+const razorpayMode = getRazorpayMode(process.env.RAZORPAY_KEY_ID);
 
 const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
   ? new Razorpay({
@@ -28,13 +48,36 @@ const razorpay = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
     })
   : null;
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => {
+let mongoConnectionPromise = null;
+
+async function connectDatabase() {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI is not configured.');
+  }
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (!mongoConnectionPromise) {
+    mongoConnectionPromise = mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000,
+    }).then(connection => {
+      console.log('MongoDB connected');
+      return connection;
+    }).catch(err => {
+      mongoConnectionPromise = null;
+      throw err;
+    });
+  }
+  return mongoConnectionPromise;
+}
+
+app.use('/api', async (_, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (err) {
     console.error('MongoDB failed:', err.message);
-    process.exit(1);
-  });
+    res.status(500).json({ success: false, message: 'Database connection failed.' });
+  }
+});
 
 const DOMAIN_LABELS = {
   fullstack: 'Full Stack Web Development',
@@ -45,25 +88,49 @@ const DOMAIN_LABELS = {
   analytics: 'Business Analytics',
   cybersecurity: 'Cybersecurity',
   productmgmt: 'Product Management',
+  embedded: 'Embedded Systems',
+  iot: 'IoT',
+  vlsi: 'VLSI',
+  robotics: 'Robotics',
+  powersystems: 'Power Systems',
+  electricalmachines: 'Electrical Machines',
+  renewableenergy: 'Renewable Energy',
+  smartgrids: 'Smart Grids',
+  plcscada: 'PLC/SCADA',
+  siteengineering: 'Site Engineering',
+  structuraldesign: 'Structural Design',
+  quantitysurveying: 'Quantity Surveying',
+  bim: 'BIM',
+  urbanplanning: 'Urban Planning',
+  caddesign: 'CAD Design',
+  manufacturing: 'Manufacturing',
+  automotiveev: 'Automotive/EV',
+  thermalsystems: 'Thermal Systems',
 };
 
+function getDurationLabel(startDate, endDate) {
+  const diffMs = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.max(1, Math.ceil(diffMs / (24 * 60 * 60 * 1000)) + 1);
+  const approxMonths = Math.max(1, Math.round(diffDays / 30));
+  if (diffDays < 45) return `${diffDays} Day${diffDays === 1 ? '' : 's'}`;
+  return `${approxMonths} Month${approxMonths === 1 ? '' : 's'}`;
+}
+
 function validateApplicationPayload(body) {
-  const required = ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'duration'];
+  const required = ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'endDate'];
   const missing = required.filter(field => !body?.[field]?.toString().trim());
   if (missing.length) return { error: `Missing: ${missing.join(', ')}` };
 
-  const { fullName, dateOfBirth, email, countryCode, phone, domain, startDate, duration } = body;
+  const { fullName, dateOfBirth, email, countryCode, phone, domain, startDate, endDate } = body;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Invalid email.' };
 
   const dob = new Date(dateOfBirth);
   const start = new Date(startDate);
-  const durationN = parseInt(duration, 10);
+  const end = new Date(endDate);
   if (Number.isNaN(dob.getTime())) return { error: 'Invalid date of birth.' };
   if (Number.isNaN(start.getTime())) return { error: 'Invalid start date.' };
-  if (!Number.isInteger(durationN) || durationN < 1) return { error: 'Invalid duration.' };
-
-  const end = new Date(start);
-  end.setMonth(end.getMonth() + durationN);
+  if (Number.isNaN(end.getTime())) return { error: 'Invalid internship end date.' };
+  if (end < start) return { error: 'Internship end date cannot be before start date.' };
 
   return {
     value: {
@@ -75,47 +142,65 @@ function validateApplicationPayload(body) {
       domain: DOMAIN_LABELS[domain] || domain,
       startDate: start,
       endDate: end,
-      duration: `${durationN} Month${durationN === 1 ? '' : 's'}`,
+      duration: getDurationLabel(start, end),
     },
   };
 }
 
-async function processOfferInBackground(applicant) {
-  setImmediate(async () => {
-    try {
-      const pdfPath = await generateOfferLetterPDF({
-        fullName: applicant.fullName,
-        domain: applicant.domain,
-        candidateId: applicant.candidateId,
-        startDate: applicant.startDate,
-        endDate: applicant.endDate,
-        duration: applicant.duration,
-      });
+async function processOffer(applicant) {
+  try {
+    const pdfPath = await generateOfferLetterPDF({
+      fullName: applicant.fullName,
+      domain: applicant.domain,
+      candidateId: applicant.candidateId,
+      startDate: applicant.startDate,
+      endDate: applicant.endDate,
+      duration: applicant.duration,
+    });
 
-      await sendOfferEmail({
-        fullName: applicant.fullName,
-        email: applicant.email,
-        domain: applicant.domain,
-        candidateId: applicant.candidateId,
-        startDate: applicant.startDate,
-        endDate: applicant.endDate,
-        duration: applicant.duration,
-      }, pdfPath);
+    await sendOfferEmail({
+      fullName: applicant.fullName,
+      email: applicant.email,
+      domain: applicant.domain,
+      candidateId: applicant.candidateId,
+      startDate: applicant.startDate,
+      endDate: applicant.endDate,
+      duration: applicant.duration,
+    }, pdfPath);
 
-      await Applicant.findByIdAndUpdate(applicant._id, { emailSent: true, pdfPath, status: 'contacted' });
-      console.log(`Offer complete for ${applicant.candidateId}`);
+    await Applicant.findByIdAndUpdate(applicant._id, { emailSent: true, pdfPath, status: 'contacted' });
+    console.log(`Offer complete for ${applicant.candidateId}`);
 
+    if (process.env.VERCEL) {
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    } else {
       setTimeout(() => {
         if (fs.existsSync(pdfPath)) {
           fs.unlinkSync(pdfPath);
           console.log(`PDF cleaned: ${path.basename(pdfPath)}`);
         }
       }, 3600000);
-    } catch (bgErr) {
-      console.error(`Background job failed for ${applicant.candidateId}:`, bgErr.message);
-      await Applicant.findByIdAndUpdate(applicant._id, { emailError: bgErr.message }).catch(() => {});
     }
+  } catch (bgErr) {
+    console.error(`Background job failed for ${applicant.candidateId}:`, bgErr.message);
+    await Applicant.findByIdAndUpdate(applicant._id, { emailError: bgErr.message }).catch(() => {});
+  }
+}
+
+async function processOfferInBackground(applicant) {
+  setImmediate(() => {
+    processOffer(applicant).catch(() => {});
   });
+}
+
+async function processCertificateImmediatelyForTesting(applicant) {
+  if (!SEND_CERTIFICATE_IMMEDIATELY) return;
+  try {
+    await sendCertificateForApplicant(applicant);
+  } catch (err) {
+    console.error(`Immediate test certificate failed for ${applicant.candidateId}:`, err.message);
+    await Applicant.findByIdAndUpdate(applicant._id, { certificateEmailError: err.message }).catch(() => {});
+  }
 }
 
 async function sendCertificateForApplicant(applicant) {
@@ -172,6 +257,19 @@ async function sendDueCertificates() {
   }
 }
 
+async function sendCertificateIfDue(applicant) {
+  if (
+    applicant?.paymentStatus === 'paid' &&
+    !applicant.certificateSent &&
+    applicant.endDate &&
+    applicant.endDate <= new Date()
+  ) {
+    await sendCertificateForApplicant(applicant);
+    return true;
+  }
+  return false;
+}
+
 async function savePaidApplication(application, payment) {
   const applicant = new Applicant({
     ...application,
@@ -186,30 +284,57 @@ async function savePaidApplication(application, payment) {
 
   await applicant.save();
   console.log(`Saved: ${applicant.candidateId} - ${applicant.fullName}`);
-  await processOfferInBackground(applicant);
 
   return applicant;
 }
 
-app.post('/api/payment/order', async (req, res) => {
+function hasApplicationPayload(body) {
+  return ['fullName', 'dateOfBirth', 'email', 'countryCode', 'phone', 'domain', 'startDate', 'endDate']
+    .some(field => body?.[field] !== undefined);
+}
+
+function getPaymentVerificationFields(body) {
+  return {
+    razorpay_order_id: body.razorpay_order_id || body.order_id,
+    razorpay_payment_id: body.razorpay_payment_id || body.payment_id,
+    razorpay_signature: body.razorpay_signature || body.signature,
+  };
+}
+
+function isRazorpayAuthError(err) {
+  const message = err.error?.description || err.message || '';
+  return /authentication failed/i.test(message);
+}
+
+async function handleCreateOrder(req, res, options = {}) {
   try {
     if (!razorpay) {
       return res.status(500).json({ success: false, message: 'Razorpay is not configured on the server.' });
     }
 
-    const { error } = validateApplicationPayload(req.body);
-    if (error) return res.status(400).json({ success: false, message: error });
+    const amount = Number(req.body.amount || APPLICATION_FEE_PAISE);
+    if (!Number.isInteger(amount) || amount < MINIMUM_PAYMENT_PAISE) {
+      return res.status(400).json({ success: false, message: 'Amount must be at least 100 paise.' });
+    }
+
+    const application = req.body.application || req.body;
+    if (options.requireApplication || hasApplicationPayload(application)) {
+      const { error } = validateApplicationPayload(application);
+      if (error) return res.status(400).json({ success: false, message: error });
+    }
 
     const order = await razorpay.orders.create({
-      amount: APPLICATION_FEE_INR * 100,
-      currency: 'INR',
-      receipt: `careerproof_${Date.now()}`,
+      amount,
+      currency: (req.body.currency || 'INR').toUpperCase(),
+      receipt: req.body.receipt || `careerproof_${Date.now()}`,
       notes: { purpose: 'CareerProof application fee' },
     });
 
     res.json({
       success: true,
+      key_id: process.env.RAZORPAY_KEY_ID,
       keyId: process.env.RAZORPAY_KEY_ID,
+      order_id: order.id,
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
@@ -218,19 +343,28 @@ app.post('/api/payment/order', async (req, res) => {
     });
   } catch (err) {
     console.error('Razorpay order error:', err);
-    res.status(500).json({ success: false, message: 'Could not start payment.' });
+    res.status(isRazorpayAuthError(err) ? 401 : 500).json({
+      success: false,
+      message: isRazorpayAuthError(err)
+        ? 'Razorpay authentication failed. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are a matching key pair for the same Razorpay mode.'
+        : 'Could not start payment.',
+    });
   }
-});
+}
 
-app.post('/api/payment/verify', async (req, res) => {
+async function handleVerifyPayment(req, res, options = {}) {
   try {
     if (!razorpay) {
       return res.status(500).json({ success: false, message: 'Razorpay is not configured on the server.' });
     }
 
-    const { application, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    if (!application || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    const { application } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = getPaymentVerificationFields(req.body);
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: 'Missing payment verification details.' });
+    }
+    if (options.requireApplication && !application) {
+      return res.status(400).json({ success: false, message: 'Missing application details.' });
     }
 
     const expectedSignature = crypto
@@ -244,11 +378,20 @@ app.post('/api/payment/verify', async (req, res) => {
 
     let payment = await razorpay.payments.fetch(razorpay_payment_id);
     if (payment.status === 'authorized') {
-      payment = await razorpay.payments.capture(razorpay_payment_id, APPLICATION_FEE_INR * 100, 'INR');
+      payment = await razorpay.payments.capture(razorpay_payment_id, APPLICATION_FEE_PAISE, 'INR');
     }
 
-    if (payment.status !== 'captured' || payment.amount !== APPLICATION_FEE_INR * 100 || payment.currency !== 'INR') {
+    if (payment.status !== 'captured' || payment.amount !== APPLICATION_FEE_PAISE || payment.currency !== 'INR') {
       return res.status(400).json({ success: false, message: 'Payment was not captured for the expected amount.' });
+    }
+
+    if (!application) {
+      return res.json({
+        success: true,
+        message: 'Payment signature verified.',
+        razorpay_order_id,
+        razorpay_payment_id,
+      });
     }
 
     const { error, value } = validateApplicationPayload(application);
@@ -269,8 +412,18 @@ app.post('/api/payment/verify', async (req, res) => {
   } catch (err) {
     if (err.code === 11000) return res.status(500).json({ success: false, message: 'ID collision - retry.' });
     console.error('Payment verify error:', err);
-    res.status(500).json({ success: false, message: 'Could not verify payment or save application.' });
+    res.status(isRazorpayAuthError(err) ? 401 : 500).json({ success: false, message: 'Could not verify payment or save application.' });
   }
+}
+
+app.post('/api/create-order', (req, res) => handleCreateOrder(req, res));
+
+app.post('/api/payment/order', (req, res) => handleCreateOrder(req, res, { requireApplication: true }));
+
+app.post('/api/verify-payment', (req, res) => handleVerifyPayment(req, res));
+
+app.post('/api/payment/verify', (req, res) => {
+  handleVerifyPayment(req, res, { requireApplication: true });
 });
 
 app.post('/api/apply', async (_, res) => {
@@ -289,8 +442,42 @@ app.post('/api/certificates/run', async (_, res) => {
   }
 });
 
-app.get('/', (_, res) => {
-  res.sendFile(path.join(__dirname, 'careerproof.html'));
+app.post('/api/applications/:candidateId/process-documents', async (req, res) => {
+  try {
+    const doc = await Applicant.findOne({ candidateId: req.params.candidateId });
+    if (!doc || doc.paymentStatus !== 'paid') {
+      return res.status(404).json({ success: false, message: 'No paid application found for this ID.' });
+    }
+
+    if (!doc.emailSent) {
+      await processOffer(doc);
+    }
+
+    const latestDoc = await Applicant.findOne({ candidateId: req.params.candidateId });
+    const certificateDoc = latestDoc || doc;
+    if (SEND_CERTIFICATE_IMMEDIATELY && !certificateDoc.certificateSent) {
+      await processCertificateImmediatelyForTesting(certificateDoc);
+    } else {
+      await sendCertificateIfDue(certificateDoc);
+    }
+
+    res.json({ success: true, message: 'Documents processed.' });
+  } catch (err) {
+    console.error(`Document processing failed for ${req.params.candidateId}:`, err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get(['/', '/careerproof.html', '/index.html'], (_, res) => {
+  sendHtmlPage(res, 'careerproof.html');
+});
+
+app.get(['/apply', '/apply.html'], (_, res) => {
+  sendHtmlPage(res, 'apply.html');
+});
+
+app.get(['/verify', '/verify.html'], (_, res) => {
+  sendHtmlPage(res, 'verify.html');
 });
 
 app.get('/careerride.html', (_, res) => {
@@ -304,23 +491,33 @@ app.get('/api/verify/:candidateId', async (req, res) => {
       return res.status(404).json({ success: false, message: 'No verified student record found for this ID.' });
     }
 
+    let latestDoc = doc;
+    try {
+      if (!SEND_CERTIFICATE_IMMEDIATELY) {
+        await sendCertificateIfDue(doc);
+        latestDoc = await Applicant.findOne({ candidateId: req.params.candidateId }) || doc;
+      }
+    } catch (certErr) {
+      console.error(`Certificate auto-send failed for ${doc.candidateId}:`, certErr.message);
+    }
+
     const now = new Date();
-    const isCompleted = doc.endDate && doc.endDate <= now;
+    const isCompleted = SEND_CERTIFICATE_IMMEDIATELY || (latestDoc.endDate && latestDoc.endDate <= now);
     res.json({
       success: true,
       data: {
-        candidateId: doc.candidateId,
-        fullName: doc.fullName,
-        domain: doc.domain,
-        startDate: doc.startDate,
-        endDate: doc.endDate,
-        duration: doc.duration,
-        status: doc.status,
-        paymentStatus: doc.paymentStatus,
-        offerLetterAvailable: !!doc.emailSent,
+        candidateId: latestDoc.candidateId,
+        fullName: latestDoc.fullName,
+        domain: latestDoc.domain,
+        startDate: latestDoc.startDate,
+        endDate: latestDoc.endDate,
+        duration: latestDoc.duration,
+        status: latestDoc.status,
+        paymentStatus: latestDoc.paymentStatus,
+        offerLetterAvailable: !!latestDoc.emailSent,
         certificateAvailable: !!isCompleted,
-        certificateSent: !!doc.certificateSent,
-        certificateId: doc.certificateId || null,
+        certificateSent: !!latestDoc.certificateSent,
+        certificateId: latestDoc.certificateId || null,
       },
     });
   } catch (err) {
@@ -359,7 +556,7 @@ app.get('/api/verify/:candidateId/certificate', async (req, res) => {
     if (!doc || doc.paymentStatus !== 'paid') {
       return res.status(404).json({ success: false, message: 'No verified student record found for this ID.' });
     }
-    if (!doc.endDate || doc.endDate > new Date()) {
+    if (!SEND_CERTIFICATE_IMMEDIATELY && (!doc.endDate || doc.endDate > new Date())) {
       return res.status(403).json({ success: false, message: 'Certificate is available only after internship completion.' });
     }
 
@@ -430,16 +627,28 @@ app.get('/api/applications/:candidateId', async (req, res) => {
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }));
 
-app.listen(PORT, () => {
-  console.log(`\nCareerProof API  ->  http://localhost:${PORT}`);
-  console.log(`MongoDB          ->  ${(process.env.MONGODB_URI || '').slice(0, 42)}...`);
-  console.log(`Email provider   ->  ${process.env.EMAIL_PROVIDER || 'gmail'}`);
-  console.log(`Razorpay         ->  ${razorpay ? 'configured' : 'missing keys'}\n`);
-});
+if (require.main === module) {
+  connectDatabase()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`\nCareerProof API  ->  http://localhost:${PORT}`);
+        console.log(`MongoDB          ->  ${(process.env.MONGODB_URI || '').slice(0, 42)}...`);
+        console.log(`Email provider   ->  ${process.env.EMAIL_PROVIDER || 'gmail'}`);
+        console.log(`Razorpay         ->  ${razorpay ? `${razorpayMode} keys configured` : 'missing keys'}\n`);
+      });
 
-mongoose.connection.once('open', () => {
-  sendDueCertificates().catch(err => console.error('Certificate startup job failed:', err.message));
-  setInterval(() => {
-    sendDueCertificates().catch(err => console.error('Certificate scheduled job failed:', err.message));
-  }, 24 * 60 * 60 * 1000);
-});
+      sendDueCertificates().catch(err => console.error('Certificate startup job failed:', err.message));
+      setInterval(() => {
+        sendDueCertificates().catch(err => console.error('Certificate scheduled job failed:', err.message));
+      }, 24 * 60 * 60 * 1000);
+    })
+    .catch(err => {
+      console.error('MongoDB failed:', err.message);
+      process.exit(1);
+    });
+}
+
+module.exports = app;
+
+
+

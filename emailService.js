@@ -12,6 +12,8 @@ function renderTemplate(templatePath, vars) {
 
 function createTransporter() {
   const provider = (process.env.EMAIL_PROVIDER || 'gmail').toLowerCase();
+  const emailUser = (process.env.EMAIL_USER || '').trim();
+  const emailPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
 
   if (provider === 'resend') {
     return nodemailer.createTransport({
@@ -29,8 +31,8 @@ function createTransporter() {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: emailUser,
+        pass: emailPass,
       },
     });
   }
@@ -40,8 +42,8 @@ function createTransporter() {
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: emailUser,
+      pass: emailPass,
     },
   });
 }
@@ -65,7 +67,7 @@ async function sendOfferEmail(applicantData, pdfPath) {
     candidateId,
     startDate: formatDate(startDate),
     endDate: endDate ? formatDate(endDate) : '',
-    whatsappLink: process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/',
+    whatsappLink: process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/LczuM4imlqRHiceUQAibDU',
     supportEmail: process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || 'careerproof.services@gmail.com',
     supportPhone: process.env.SUPPORT_PHONE || '+91 9876543210',
   });
